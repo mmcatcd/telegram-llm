@@ -1,0 +1,9 @@
+version: '3'
+
+services:
+  bot:
+    build: .
+    restart: unless-stopped
+    volumes:
+      - ./.env:/app/.env:ro
+      - .:/app:rw  # Mount the entire codebase as a volume

@@ -1,0 +1,12 @@
+.env
+.venv
+__pycache__/
+*.py[cod]
+*$py.class
+.git
+.gitignore
+.pytest_cache
+.coverage
+htmlcov/
+token.json
+credentials.json

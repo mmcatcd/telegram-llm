@@ -1,0 +1,24 @@
+[tool.poetry]
+name = "telegram-llm"
+version = "0.1.0"
+description = ""
+authors = ["Michael McAndrew <mcandrmi@tcd.ie>"]
+readme = "README.md"
+packages = [
+    { include = "app.py" },
+]
+
+[tool.poetry.dependencies]
+python = "^3.12"
+pydantic-ai = "~0.0.30"
+logfire = "^3.6.4"
+python-telegram-bot = "^21.11.1"
+python-dotenv = "^1.0.1"
+
+[tool.poetry.scripts]
+service-run = "app:main"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
