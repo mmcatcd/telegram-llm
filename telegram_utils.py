@@ -1,6 +1,7 @@
 from config import list_of_admins
 from functools import wraps
 import re
+import logfire
 
 
 # Taken from official wiki
@@ -10,7 +11,7 @@ def restricted(func):
     async def wrapped(update, context, *args, **kwargs):
         user_id = update.effective_user.id
         if str(user_id) not in list_of_admins:
-            print(f"Unauthorized access denied for {user_id}.")
+            logfire.error(f"Unauthorized access denied for {user_id}.")
             return
         return await func(update, context, *args, **kwargs)
     return wrapped

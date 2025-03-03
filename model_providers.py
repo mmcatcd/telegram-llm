@@ -34,9 +34,6 @@ def get_current_user_model(context: ContextTypes.DEFAULT_TYPE) -> LLMModel:
     model_provider = context.user_data.get("model_provider")
     model_id = context.user_data.get("model_id")
 
-    print("Model provider:", model_provider)
-    print("Model ID:", model_id)
-
     if not model_provider or not model_id:
         return LLMModel(
             model_provider=DEFAULT_MODEL_PROVIDER,
