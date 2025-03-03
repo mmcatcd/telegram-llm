@@ -1,6 +1,5 @@
 from telegram import Update
 from telegram.ext import CallbackContext
-from model_providers import get_current_user_model
 from telegram_utils import restricted
 import sqlite_utils
 import llm
@@ -59,11 +58,6 @@ async def model(update: Update, context: CallbackContext) -> None:
         f"Your model id has been changed to: `{model_id}`\n",
         parse_mode="MARKDOWN",
     )
-
-
-@restricted
-async def get_model(update: Update, context: CallbackContext) -> str:
-    await update.message.reply_text(get_current_user_model(context).model_string)
 
 
 async def list_models(update: Update, context: CallbackContext) -> None:
