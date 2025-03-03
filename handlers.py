@@ -12,7 +12,6 @@ model_message_adapter = TypeAdapter(ModelMessage)
 agent = Agent()
 
 
-@restricted
 async def user_id(update: Update, context: CallbackContext) -> None:
     await update.message.reply_text(f"Your user id is: {update.effective_user.id}")
 
