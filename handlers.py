@@ -26,24 +26,20 @@ async def chat_id(update: Update, context: CallbackContext) -> None:
 
 @restricted
 async def model(update: Update, context: CallbackContext) -> None:
-    """Change the LLM model used by the bot for this user.
-    Usage: /model [provider] [model_id]
-    Examples: 
-      /model anthropic claude-3-7-sonnet-latest
-      /model openai gpt-4o
-    If no arguments are provided, it shows the current model."""
-
     current_model_id = context.user_data.get("model_id", default_model_id)
 
+    return await update.message.reply_text(
+        f"Your current model id is: `{current_model_id}`",
+        parse_mode="MARKDOWN",
+    )
+
+
+async def set_model(update: Update, context: CallbackContext) -> None:
     if not context.args or len(context.args) == 0:
-        await update.message.reply_text(
-            f"Your current model provider is: `{current_model_id}`\n"
-            f"To change the model, use: /model [model_id]\n"
-            f"Examples:\n"
-            f"  `/model openai gpt-4o`",
+        return await update.message.reply_text(
+            "You must provide a valid model id like: `/set_model gpt-4o`",
             parse_mode="MARKDOWN",
         )
-        return
     
     model_id = context.args[0]
 
@@ -62,6 +58,38 @@ async def model(update: Update, context: CallbackContext) -> None:
     )
 
 
+async def system_prompt(update: Update, context: CallbackContext) -> None:
+    system_prompt = context.user_data.get("system_prompt", "")
+
+    if system_prompt:
+        return await update.message.reply_text(
+            "The current system prompt is:\n\n"
+            f"> {system_prompt}\n",
+            parse_mode="MARKDOWN",
+        )
+        
+    return await update.message.reply_text(
+        "The system prompt is not currently set",
+    )
+
+
+async def set_system_prompt(update: Update, context: CallbackContext) -> None:
+    if not context.args or len(context.args) == 0:
+        context.user_data["system_prompt"] = ""
+        return await update.message.reply_text(
+            "The system prompt has been set to blank",
+        )
+    
+    system_prompt = " ".join(context.args)
+    context.user_data["system_prompt"] = system_prompt
+
+    await update.message.reply_text(
+        "Your system prompt has been updated to:\n\n"
+        f"> {system_prompt}\n",
+        parse_mode="MARKDOWN",
+    )
+
+
 async def list_models(update: Update, context: CallbackContext) -> None:
     await update.message.reply_text(
         f"\n".join("`/model " + model_id + "`" for model_id in model_ids),
@@ -73,12 +101,13 @@ async def help(update: Update, context: CallbackContext) -> None:
     """Send a message with a list of available commands."""
     help_text = """
     Available commands:
-    /list_models - Get a list of available models that you can use
-    /model - Set the model id to use
     /private - Send a message in isolation of the chat conversation
         - Example: /private What is integer interning in python?
-    /user_id - Get your Telegram user ID
-    /chat_id - Get the current chat ID
+    /models - Get a list of available models that you can use
+    /model - Get the current model being used
+    /set_model - Set the model being used
+    /system_prompt - Get the current system prompt being used
+    /set_system_prompt - Set the system prompt
     /help - Show this help message
     """
     await update.message.reply_text(help_text)
@@ -87,7 +116,7 @@ async def help(update: Update, context: CallbackContext) -> None:
 @restricted
 async def process_private_message(update: Update, context: CallbackContext) -> None:
     if not context.args:
-        await update.message.reply_text("You need to provide a message e.g., `/private My test message`", parse_mode="MARKDOWN")
+        return await update.message.reply_text("You need to provide a message e.g., `/private My test message`", parse_mode="MARKDOWN")
 
     message_text = " ".join(context.args)
     model = llm.get_model(context.user_data.get("model_id", default_model_id))
