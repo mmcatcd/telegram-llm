@@ -6,6 +6,7 @@ import llm
 from llm.cli import load_conversation, logs_db_path
 from llm.migrations import migrate
 from config import default_model_id
+from datetime import datetime
 
 
 model_ids = [model_with_alias.model.model_id for model_with_alias in llm.get_models_with_aliases()]
@@ -89,20 +90,49 @@ async def process_private_message(update: Update, context: CallbackContext) -> N
     await update.message.reply_text(model.prompt(message_text).text(), parse_mode="MARKDOWN")
 
 
+def _get_user_conversations_table(db) -> None:
+    user_conversations = db.table("user_conversations", pk=("user_id",))
+    if not user_conversations.exists():
+        user_conversations.create({
+            "user_id": int,
+            "conversation_id": str,
+            "last_used": str,
+        }, if_not_exists=True)
+
+    return user_conversations
+
+
+def _get_user_conversation_id(user_conversations_table, current_user_id: int) -> str | None:
+    results = list(user_conversations_table.rows_where("user_id = ?", [current_user_id], limit=1))
+    return results[0]["conversation_id"] if results else None
+
+
+def _set_user_conversation_id(user_conversations_table, conversation_id: str, current_user_id: int) -> None:
+    user_conversations_table.upsert({
+        "user_id": current_user_id,
+        "conversation_id": conversation_id,
+        "last_used": datetime.now().isoformat(),
+    }, pk="user_id")
+
+
 @restricted
 async def process_message(update: Update, context: CallbackContext) -> None:
     """Processes a message from the user, gets an answer, and sends it back."""
 
-    conversation_id = context.user_data.get("conversation_id")
-    model_id = context.user_data.get("model_id", default_model_id)
-    model = llm.get_model(model_id)
+    current_user_id = update.effective_user.id
 
     db = sqlite_utils.Database(logs_db_path())
     migrate(db) # Migrate the DB before using it, as `log_to_db` doesn't do a migration
 
+    user_conversations_table = _get_user_conversations_table(db)
+
+    conversation_id = _get_user_conversation_id(user_conversations_table, current_user_id)
+    model_id = context.user_data.get("model_id", default_model_id)
+    model = llm.get_model(model_id)
+
     if not conversation_id:
         conversation = model.conversation()
-        context.user_data["conversation_id"] = conversation.id
+        _set_user_conversation_id(user_conversations_table, conversation.id, current_user_id)
     else:
         conversation = load_conversation(conversation_id)
         
