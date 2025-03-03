@@ -14,6 +14,10 @@ pydantic-ai = "~0.0.30"
 logfire = "^3.6.4"
 python-telegram-bot = "^21.11.1"
 python-dotenv = "^1.0.1"
+llm = "^0.23"
+sqlite-utils = "^3.38"
+llm-anthropic = "^0.15.1"
+llm-gemini = "^0.13"
 
 [tool.poetry.scripts]
 service-run = "app:main"

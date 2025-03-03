@@ -11,7 +11,7 @@ run:
 .PHONY: shell
 shell:
 	@echo "Opening Python shell in Poetry environment..."
-	docker compose run --rm app poetry run python
+	docker compose run --rm bot poetry run python
 
 .PHONY: help
 help:

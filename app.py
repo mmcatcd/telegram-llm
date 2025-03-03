@@ -1,7 +1,7 @@
 import os
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters
 from dotenv import load_dotenv
-from handlers import user_id, process_message, chat_id, private_mode, help, set_model, get_model
+from handlers import user_id, process_message, chat_id, process_private_message, help, model, list_models
 import logfire
 from config import logfire_api_key
 
@@ -16,9 +16,9 @@ def main():
 
     app.add_handler(CommandHandler("user_id", user_id))
     app.add_handler(CommandHandler("chat_id", chat_id))
-    app.add_handler(CommandHandler("private_mode", private_mode))
-    app.add_handler(CommandHandler("set_model", set_model))
-    app.add_handler(CommandHandler("get_model", get_model))
+    app.add_handler(CommandHandler("private", process_private_message))
+    app.add_handler(CommandHandler("list_models", list_models))
+    app.add_handler(CommandHandler("model", model))
     app.add_handler(CommandHandler("help", help))
 
     # Handles non-command messages, sends to Agent, and returns reply.
