@@ -7,6 +7,7 @@ from llm.cli import load_conversation, logs_db_path
 from llm.migrations import migrate
 from config import default_model_id
 from datetime import datetime
+from telegram.error import BadRequest
 
 
 model_ids = [model_with_alias.model.model_id for model_with_alias in llm.get_models_with_aliases()]
@@ -75,19 +76,25 @@ async def help(update: Update, context: CallbackContext) -> None:
     /list_models - Get a list of available models that you can use
     /model - Set the model id to use
     /private - Send a message in isolation of the chat conversation
-        - Example: `/private What is integer interning in python?`
+        - Example: /private What is integer interning in python?
     /user_id - Get your Telegram user ID
     /chat_id - Get the current chat ID
     /help - Show this help message
     """
-    await update.message.reply_text(help_text, parse_mode="MARKDOWN")
+    await update.message.reply_text(help_text)
 
 
 @restricted
 async def process_private_message(update: Update, context: CallbackContext) -> None:
+    if not context.args:
+        await update.message.reply_text("You need to provide a message e.g., `/private My test message`", parse_mode="MARKDOWN")
+
     message_text = " ".join(context.args)
     model = llm.get_model(context.user_data.get("model_id", default_model_id))
-    await update.message.reply_text(model.prompt(message_text).text(), parse_mode="MARKDOWN")
+    try:
+        await update.message.reply_text(model.prompt(message_text).text(), parse_mode="MARKDOWN")
+    except BadRequest:
+        await update.message.reply_text(model.prompt(message_text).text())
 
 
 def _get_user_conversations_table(db) -> None:
@@ -147,4 +154,7 @@ async def process_message(update: Update, context: CallbackContext) -> None:
     # Persisting the response to the SQLite DB to keep the conversation
     response.log_to_db(db)
 
-    await update.message.reply_text(response.text(), parse_mode="MARKDOWN")
+    try:
+        await update.message.reply_text(response.text(), parse_mode="MARKDOWN")
+    except BadRequest:
+        await update.message.reply_text(response.text())
