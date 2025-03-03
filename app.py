@@ -12,6 +12,7 @@ from handlers import (
     system_prompt,
     set_system_prompt,
     set_model,
+    attachment_types,
 )
 import logfire
 from config import logfire_api_key
@@ -33,9 +34,10 @@ def main():
     app.add_handler(CommandHandler("models", list_models))
     app.add_handler(CommandHandler("model", model))
     app.add_handler(CommandHandler("set_model", set_model))
+    app.add_handler(CommandHandler("attachment_types", attachment_types))
     app.add_handler(CommandHandler("help", help))
 
     # Handles non-command messages, sends to Agent, and returns reply.
-    app.add_handler(MessageHandler((filters.TEXT | filters.PHOTO) & ~filters.COMMAND, process_message))
+    app.add_handler(MessageHandler((filters.TEXT | filters.PHOTO | filters.AUDIO) & ~filters.COMMAND, process_message))
 
     app.run_polling()

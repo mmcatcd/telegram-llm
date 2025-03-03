@@ -8,11 +8,12 @@ from llm.migrations import migrate
 from config import default_model_id
 from datetime import datetime
 from telegram.error import BadRequest
+import logfire
 
 
 model_ids = [model_with_alias.model.model_id for model_with_alias in llm.get_models_with_aliases()]
 
-MESSAGE_HISTORY_LIMIT = 100
+MESSAGE_HISTORY_LIMIT = 15
 
 
 async def user_id(update: Update, context: CallbackContext) -> None:
@@ -34,6 +35,7 @@ async def model(update: Update, context: CallbackContext) -> None:
     )
 
 
+@restricted
 async def set_model(update: Update, context: CallbackContext) -> None:
     if not context.args or len(context.args) == 0:
         return await update.message.reply_text(
@@ -58,6 +60,7 @@ async def set_model(update: Update, context: CallbackContext) -> None:
     )
 
 
+@restricted
 async def system_prompt(update: Update, context: CallbackContext) -> None:
     system_prompt = context.user_data.get("system_prompt", "")
 
@@ -73,6 +76,7 @@ async def system_prompt(update: Update, context: CallbackContext) -> None:
     )
 
 
+@restricted
 async def set_system_prompt(update: Update, context: CallbackContext) -> None:
     if not context.args or len(context.args) == 0:
         context.user_data["system_prompt"] = ""
@@ -90,10 +94,21 @@ async def set_system_prompt(update: Update, context: CallbackContext) -> None:
     )
 
 
+@restricted
 async def list_models(update: Update, context: CallbackContext) -> None:
     await update.message.reply_text(
-        f"\n".join("`/model " + model_id + "`" for model_id in model_ids),
+        f"\n".join("`" + model_id + "`" for model_id in model_ids),
         parse_mode="MARKDOWN",
+    )
+
+
+@restricted
+async def attachment_types(update: Update, context: CallbackContext) -> None:
+    model_id = context.user_data.get("model_id", default_model_id)
+    model = llm.get_model(model_id)
+    attachment_types = "\n".join("- " + type for type in model.attachment_types)
+    await update.message.reply_text(
+        f"Supported attachment types are:\n{attachment_types}",
     )
 
 
@@ -108,6 +123,7 @@ async def help(update: Update, context: CallbackContext) -> None:
     /set_model - Set the model being used
     /system_prompt - Get the current system prompt being used
     /set_system_prompt - Set the system prompt
+    /attachment_types - Get the attachment types supported by the current model
     /help - Show this help message
     """
     await update.message.reply_text(help_text)
@@ -178,7 +194,29 @@ async def process_message(update: Update, context: CallbackContext) -> None:
         # Explicitly setting the message limit so it doesn't cost me a bomb.
         conversation.responses = conversation.responses[-MESSAGE_HISTORY_LIMIT:]
 
-    response = conversation.prompt(update.message.text)
+        logfire.info(f"Number of responses: {len(conversation.responses)}")
+
+    attachments = []
+    message_text = update.message.text if update.message.text else update.message.caption
+    logfire.info(f"Prompt: {message_text}")
+    if update.message.photo:
+        # Check if current model supports images.
+        if "image/jpeg" not in model.attachment_types:
+            return await update.message.reply_text(
+                "The current model doesn't support image attachments. "
+                "Please switch to a model type that supports images."
+            )
+
+        photo_file = await update.message.photo[-1].get_file()
+        photo_content = await photo_file.download_as_bytearray()
+        attachments.append(
+            llm.Attachment(content=photo_content),
+        )
+
+    response = conversation.prompt(
+        message_text,
+        attachments=attachments,
+    )
     
     # Persisting the response to the SQLite DB to keep the conversation
     response.log_to_db(db)
@@ -187,3 +225,5 @@ async def process_message(update: Update, context: CallbackContext) -> None:
         await update.message.reply_text(response.text(), parse_mode="MARKDOWN")
     except BadRequest:
         await update.message.reply_text(response.text())
+
+    logfire.info(f"Message: {response.text()} Usage: {response.usage()}")
