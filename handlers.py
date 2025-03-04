@@ -1,6 +1,6 @@
 from telegram import Update
 from telegram.ext import CallbackContext
-from telegram_utils import restricted
+from telegram_utils import restricted, send_long_message
 import sqlite_utils
 import llm
 from llm.cli import load_conversation, logs_db_path
@@ -136,13 +136,26 @@ async def process_private_message(update: Update, context: CallbackContext) -> N
 
     message_text = " ".join(context.args)
     model = llm.get_model(context.user_data.get("model_id", default_model_id))
+    response = model.prompt(message_text)
+
     try:
-        await update.message.reply_text(model.prompt(message_text).text(), parse_mode="MARKDOWN")
-    except BadRequest:
-        await update.message.reply_text(model.prompt(message_text).text())
+        response_text = response.text()
     except Exception as e:
         await update.message.reply_text(f"Something went wrong when trying to call the LLM: {e}")
         logfire.error(e)
+        return
+
+    try:
+        await send_long_message(update, context, response_text, parse_mode="MARKDOWN")
+    except BadRequest:
+        await send_long_message(update, context, response_text, parse_mode=None)
+
+    try:
+        await update.message.reply_text(response_text, parse_mode="MARKDOWN")
+    except BadRequest:
+        await update.message.reply_text(response_text)
+
+    logfire.info(f"Message: {response_text} Usage: {response.usage()}")
 
 
 def _get_user_conversations_table(db) -> None:
