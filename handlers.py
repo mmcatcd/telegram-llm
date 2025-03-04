@@ -140,6 +140,8 @@ async def process_private_message(update: Update, context: CallbackContext) -> N
         await update.message.reply_text(model.prompt(message_text).text(), parse_mode="MARKDOWN")
     except BadRequest:
         await update.message.reply_text(model.prompt(message_text).text())
+    except Exception as e:
+        await update.message.reply_text(f"Something went wrong when trying to call the LLM: {e}")
 
 
 def _get_user_conversations_table(db) -> None:
