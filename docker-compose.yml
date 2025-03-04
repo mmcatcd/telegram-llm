@@ -5,7 +5,6 @@ services:
     build: .
     restart: unless-stopped
     volumes:
-      - ./.env:/app/.env:ro
       - .:/app:rw  # Mount the entire codebase as a volume
       - llm_data:/root/.config/io.datasette.llm  # Named volume for the LLM database
 
