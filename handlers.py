@@ -150,11 +150,6 @@ async def process_private_message(update: Update, context: CallbackContext) -> N
     except BadRequest:
         await send_long_message(update, context, response_text, parse_mode=None)
 
-    try:
-        await update.message.reply_text(response_text, parse_mode="MARKDOWN")
-    except BadRequest:
-        await update.message.reply_text(response_text)
-
     logfire.info(f"Message: {response_text} Usage: {response.usage()}")
 
 
