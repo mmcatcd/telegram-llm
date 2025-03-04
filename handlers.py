@@ -240,8 +240,8 @@ async def process_message(update: Update, context: CallbackContext) -> None:
     response.log_to_db(db)    
 
     try:
-        await update.message.reply_text(response_text, parse_mode="MARKDOWN")
+        await send_long_message(update, context, response_text, parse_mode="MARKDOWN")
     except BadRequest:
-        await update.message.reply_text(response_text)
+        await send_long_message(update, context, response_text)
 
     logfire.info(f"Message: {response_text} Usage: {response.usage()}")
