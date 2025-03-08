@@ -1,8 +1,9 @@
-from config import list_of_admins
-from functools import wraps
 import re
+from functools import wraps
+
 import logfire
 
+from config import list_of_admins
 
 MAX_MESSAGE_LENGTH = 4096
 
@@ -17,6 +18,7 @@ def restricted(func):
             logfire.error(f"Unauthorized access denied for {user_id}.")
             return
         return await func(update, context, *args, **kwargs)
+
     return wrapped
 
 
@@ -29,14 +31,14 @@ async def send_long_message(update, context, text: str, parse_mode="MarkdownV2")
     """
     Splits a long message into multiple parts and sends them as replies.
     Each message will be <= 4096 characters.
-    
+
     Args:
         update: Telegram update object
         context: Telegram context object
         text: The text to send
         parse_mode: The parse mode to use (default: MarkdownV2)
     """
-    
+
     # If message is short enough, send it directly
     if len(text) <= MAX_MESSAGE_LENGTH:
         await update.message.reply_text(text, parse_mode=parse_mode)
@@ -48,13 +50,13 @@ async def send_long_message(update, context, text: str, parse_mode="MarkdownV2")
         if len(text) <= MAX_MESSAGE_LENGTH:
             parts.append(text)
             break
-        
+
         # Try to find a newline to split at
-        split_index = text.rfind('\n', 0, MAX_MESSAGE_LENGTH)
+        split_index = text.rfind("\n", 0, MAX_MESSAGE_LENGTH)
         if split_index == -1:
             # No newline found, split at maximum length
             split_index = MAX_MESSAGE_LENGTH
-        
+
         parts.append(text[:split_index])
         text = text[split_index:].lstrip()
 
@@ -63,16 +65,14 @@ async def send_long_message(update, context, text: str, parse_mode="MarkdownV2")
     for i, part in enumerate(parts, 1):
         if parse_mode == "MarkdownV2":
             part = escape_markdown_v2(part)
-        
+
         if first_message is None:
             # First message replies to the original
             first_message = await update.message.reply_text(
-                f"(Part {i}/{len(parts)})\n\n{part}",
-                parse_mode=parse_mode
+                f"(Part {i}/{len(parts)})\n\n{part}", parse_mode=parse_mode
             )
         else:
             # Subsequent messages reply to the first part
             await first_message.reply_text(
-                f"(Part {i}/{len(parts)})\n\n{part}",
-                parse_mode=parse_mode
+                f"(Part {i}/{len(parts)})\n\n{part}", parse_mode=parse_mode
             )

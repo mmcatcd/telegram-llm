@@ -1,21 +1,23 @@
 import os
-from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters
-from dotenv import load_dotenv
-from handlers import (
-    user_id,
-    process_message,
-    chat_id,
-    process_private_message,
-    help,
-    model,
-    list_models,
-    system_prompt,
-    set_system_prompt,
-    set_model,
-    attachment_types,
-)
+
 import logfire
+from dotenv import load_dotenv
+from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters
+
 from config import logfire_api_key
+from handlers import (
+    attachment_types,
+    chat_id,
+    help,
+    list_models,
+    model,
+    process_message,
+    process_private_message,
+    set_model,
+    set_system_prompt,
+    system_prompt,
+    user_id,
+)
 
 logfire.configure(token=logfire_api_key)
 load_dotenv()
@@ -38,6 +40,11 @@ def main():
     app.add_handler(CommandHandler("help", help))
 
     # Handles non-command messages, sends to Agent, and returns reply.
-    app.add_handler(MessageHandler((filters.TEXT | filters.PHOTO | filters.AUDIO) & ~filters.COMMAND, process_message))
+    app.add_handler(
+        MessageHandler(
+            (filters.TEXT | filters.PHOTO | filters.AUDIO) & ~filters.COMMAND,
+            process_message,
+        )
+    )
 
     app.run_polling()
