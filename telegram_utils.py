@@ -63,7 +63,7 @@ async def send_long_message(update, context, text: str, parse_mode="MarkdownV2")
     # Send each part as a reply
     first_message = None
     for i, part in enumerate(parts, 1):
-        if parse_mode == "MarkdownV2":
+        if parse_mode in ("MarkdownV2", "Markdown"):
             part = escape_markdown_v2(part)
 
         if first_message is None:
