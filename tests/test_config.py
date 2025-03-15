@@ -7,90 +7,73 @@ import config
 class TestConfig(unittest.TestCase):
     """Tests for the configuration module."""
 
+    @patch("config.os")
     @patch("config.load_dotenv")
-    def test_load_dotenv_called(self, mock_load_dotenv):
+    def test_load_dotenv_called(self, mock_load_dotenv, mock_os):
         """Test that load_dotenv is called during module import."""
-        # Force reload of the module to trigger load_dotenv
-        with patch.dict("sys.modules", {"config": None}):
-            import importlib
+        # Re-import the module to trigger the load_dotenv call
+        import importlib
 
-            importlib.import_module("config")
+        importlib.reload(config)
 
-            # Assert load_dotenv was called
-            mock_load_dotenv.assert_called_once()
+        # Assert load_dotenv was called
+        mock_load_dotenv.assert_called_once()
 
+    @patch("config.os")
     @patch("config.json.loads")
-    @patch("config.os.getenv")
-    def test_list_of_admins_from_env(self, mock_getenv, mock_json_loads):
+    def test_list_of_admins_from_env(self, mock_json_loads, mock_os):
         """Test that list_of_admins is loaded from environment variable."""
         # Setup mock environment
-        mock_getenv.side_effect = (
-            lambda key, default=None: '["123", "456"]'
-            if key == "ADMINS"
-            else "mock_value"
-        )
+        mock_os.getenv.return_value = '["123", "456"]'
         mock_json_loads.return_value = ["123", "456"]
 
-        # Force reload of the module to use the mocked environment
-        with patch.dict("sys.modules", {"config": None}):
-            import importlib
+        # Re-import the module to use the mocked environment
+        import importlib
 
-            importlib.import_module("config")
+        importlib.reload(config)
 
-            # Assert getenv was called with the correct key
-            mock_getenv.assert_any_call("ADMINS", "[]")
+        # Assert getenv was called with the correct key
+        mock_os.getenv.assert_any_call("ADMINS", "[]")
 
-            # Assert json.loads was called with the env value
-            mock_json_loads.assert_called_once_with('["123", "456"]')
+        # Assert json.loads was called with the env value
+        mock_json_loads.assert_called_once_with('["123", "456"]')
 
-            # Assert list_of_admins has the expected value
-            self.assertEqual(config.list_of_admins, ["123", "456"])
+        # Assert list_of_admins has the expected value
+        self.assertEqual(config.list_of_admins, ["123", "456"])
 
-    @patch("config.os.getenv")
-    @patch("config.json.loads")
-    def test_telegram_bot_token_from_env(self, mock_json_loads, mock_getenv):
+    @patch("config.os")
+    def test_telegram_bot_token_from_env(self, mock_os):
         """Test that telegram_bot_token is loaded from environment variable."""
         # Setup mock environment
-        mock_getenv.side_effect = lambda key, default=None: {
-            "ADMINS": "[]",
-            "TELEGRAM_BOT_TOKEN": "test_bot_token",
-        }.get(key, default)
-        mock_json_loads.return_value = []
+        mock_os.getenv.return_value = "test_bot_token"
 
-        # Force reload of the module to use the mocked environment
-        with patch.dict("sys.modules", {"config": None}):
-            import importlib
+        # Re-import the module to use the mocked environment
+        import importlib
 
-            importlib.import_module("config")
+        importlib.reload(config)
 
-            # Assert getenv was called with the correct key
-            mock_getenv.assert_any_call("TELEGRAM_BOT_TOKEN")
+        # Assert getenv was called with the correct key
+        mock_os.getenv.assert_any_call("TELEGRAM_BOT_TOKEN")
 
-            # Assert telegram_bot_token has the expected value
-            self.assertEqual(config.telegram_bot_token, "test_bot_token")
+        # Assert telegram_bot_token has the expected value
+        self.assertEqual(config.telegram_bot_token, "test_bot_token")
 
-    @patch("config.os.getenv")
-    @patch("config.json.loads")
-    def test_logfire_api_key_from_env(self, mock_json_loads, mock_getenv):
+    @patch("config.os")
+    def test_logfire_api_key_from_env(self, mock_os):
         """Test that logfire_api_key is loaded from environment variable."""
         # Setup mock environment
-        mock_getenv.side_effect = lambda key, default=None: {
-            "ADMINS": "[]",
-            "LOGFIRE_API_KEY": "test_logfire_key",
-        }.get(key, default)
-        mock_json_loads.return_value = []
+        mock_os.getenv.return_value = "test_logfire_key"
 
-        # Force reload of the module to use the mocked environment
-        with patch.dict("sys.modules", {"config": None}):
-            import importlib
+        # Re-import the module to use the mocked environment
+        import importlib
 
-            importlib.import_module("config")
+        importlib.reload(config)
 
-            # Assert getenv was called with the correct key
-            mock_getenv.assert_any_call("LOGFIRE_API_KEY")
+        # Assert getenv was called with the correct key
+        mock_os.getenv.assert_any_call("LOGFIRE_API_KEY")
 
-            # Assert logfire_api_key has the expected value
-            self.assertEqual(config.logfire_api_key, "test_logfire_key")
+        # Assert logfire_api_key has the expected value
+        self.assertEqual(config.logfire_api_key, "test_logfire_key")
 
     def test_default_model_id(self):
         """Test that default_model_id has the expected value."""

@@ -34,9 +34,11 @@ async def chat_id(update: Update, context: CallbackContext) -> None:
 async def model(update: Update, context: CallbackContext) -> None:
     current_model_id = context.user_data.get("model_id", default_model_id)
 
-    return await update.message.reply_text(
+    return await send_long_message(
+        update,
+        context,
         f"Your current model id is: `{current_model_id}`",
-        parse_mode="MARKDOWN",
+        parse_mode="MarkdownV2",
     )
 
 
@@ -51,17 +53,22 @@ async def set_model(update: Update, context: CallbackContext) -> None:
     model_id = context.args[0]
 
     if model_id not in model_ids:
-        await update.message.reply_text(
+        return await send_long_message(
+            update,
+            context,
             f"Your chosen model id: {model_id} is invalid. Please choose a valid model id.\n"
-            "To find a list of valid model ids, use: /list_models"
+            "To find a list of valid model ids, use: /list_models",
+            parse_mode="Markdown",
         )
 
     # Update the user's model preference
     context.user_data["model_id"] = model_id
 
-    await update.message.reply_text(
+    await send_long_message(
+        update,
+        context,
         f"Your model id has been changed to: `{model_id}`\n",
-        parse_mode="MARKDOWN",
+        parse_mode="Markdown",
     )
 
 
@@ -70,9 +77,11 @@ async def system_prompt(update: Update, context: CallbackContext) -> None:
     system_prompt = context.user_data.get("system_prompt", "")
 
     if system_prompt:
-        return await update.message.reply_text(
+        return await send_long_message(
+            update,
+            context,
             f"The current system prompt is:\n\n> {system_prompt}\n",
-            parse_mode="MARKDOWN",
+            parse_mode="Markdown",
         )
 
     return await update.message.reply_text(
@@ -84,24 +93,31 @@ async def system_prompt(update: Update, context: CallbackContext) -> None:
 async def set_system_prompt(update: Update, context: CallbackContext) -> None:
     if not context.args or len(context.args) == 0:
         context.user_data["system_prompt"] = ""
-        return await update.message.reply_text(
+        return await send_long_message(
+            update,
+            context,
             "The system prompt has been set to blank",
+            parse_mode="Markdown",
         )
 
     system_prompt = " ".join(context.args)
     context.user_data["system_prompt"] = system_prompt
 
-    await update.message.reply_text(
+    await send_long_message(
+        update,
+        context,
         f"Your system prompt has been updated to:\n\n> {system_prompt}\n",
-        parse_mode="MARKDOWN",
+        parse_mode="Markdown",
     )
 
 
 @restricted
 async def list_models(update: Update, context: CallbackContext) -> None:
-    await update.message.reply_text(
+    await send_long_message(
+        update,
+        context,
         "\n".join("`" + model_id + "`" for model_id in model_ids),
-        parse_mode="MARKDOWN",
+        parse_mode="Markdown",
     )
 
 
@@ -129,7 +145,7 @@ async def help(update: Update, context: CallbackContext) -> None:
     `/attachment_types` - Get the attachment types supported by the current model
     `/help` - Show this help message
     """)
-    await send_long_message(update, context, help_text, parse_mode="MarkdownV2")
+    await send_long_message(update, context, help_text, parse_mode="Markdown")
 
 
 @restricted
@@ -154,7 +170,7 @@ async def process_private_message(update: Update, context: CallbackContext) -> N
         return
 
     try:
-        await send_long_message(update, context, response_text, parse_mode="MARKDOWN")
+        await send_long_message(update, context, response_text, parse_mode="Markdown")
     except BadRequest:
         await send_long_message(update, context, response_text, parse_mode=None)
 
@@ -268,8 +284,28 @@ async def process_message(update: Update, context: CallbackContext) -> None:
     response.log_to_db(db)
 
     try:
-        await send_long_message(update, context, response_text, parse_mode="MARKDOWN")
+        await send_long_message(update, context, response_text, parse_mode="Markdown")
     except BadRequest:
         await send_long_message(update, context, response_text)
 
     logfire.info(f"Message: {response_text} Usage: {response.usage()}")
+
+
+async def error_handler(update: Update, context: CallbackContext) -> None:
+    """Handle errors caused by updates."""
+    # Log the error
+    logfire.error(f"Update {update} caused error {context.error}")
+
+    # Extract the error message
+    error_message = str(context.error)
+
+    # Send error message to user
+    try:
+        if update and update.effective_message:
+            await update.effective_message.reply_text(
+                f"❌ An error occurred: `{error_message}`",
+                parse_mode="Markdown",
+            )
+    except Exception as e:
+        logfire.error(f"Failed to send error message: {e}")
+        logfire.error(f"Failed to send error message: {e}")

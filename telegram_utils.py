@@ -196,7 +196,7 @@ def has_closing_symbol_in_line(input, index, symbol):
     )
 
 
-async def send_long_message(update, context, text: str, parse_mode="MarkdownV2"):
+async def send_long_message(update, context, text: str, parse_mode=None):
     """
     Splits a long message into multiple parts and sends them as replies.
     Each message will be <= 4096 characters.
@@ -210,8 +210,7 @@ async def send_long_message(update, context, text: str, parse_mode="MarkdownV2")
 
     # If message is short enough, send it directly
     if len(text) <= MAX_MESSAGE_LENGTH:
-        await update.message.reply_text(text, parse_mode=parse_mode)
-        return
+        return await update.message.reply_text(text, parse_mode=parse_mode)
 
     # Split into parts, trying to break at newlines when possible
     parts = []
@@ -232,9 +231,6 @@ async def send_long_message(update, context, text: str, parse_mode="MarkdownV2")
     # Send each part as a reply
     first_message = None
     for i, part in enumerate(parts, 1):
-        if parse_mode in ("MarkdownV2", "Markdown"):
-            part = escape_markdown_v2(part)
-
         if first_message is None:
             # First message replies to the original
             first_message = await update.message.reply_text(

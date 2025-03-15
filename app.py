@@ -8,6 +8,7 @@ from config import logfire_api_key
 from handlers import (
     attachment_types,
     chat_id,
+    error_handler,
     help,
     list_models,
     model,
@@ -46,5 +47,8 @@ def main():
             process_message,
         )
     )
+
+    # Add error handler
+    app.add_error_handler(error_handler)
 
     app.run_polling()
