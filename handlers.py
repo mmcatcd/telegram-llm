@@ -1,3 +1,4 @@
+import os
 from datetime import datetime
 from inspect import cleandoc
 
@@ -23,11 +24,20 @@ model_ids = [
 # Fill in the accurate cutoff dates from provider documentation
 model_cutoffs = {
     # OpenAI models
-    "gpt-4o": "April 2023",
+    "gpt-4o": "October 2023",
     "gpt-3.5-turbo": "September 2021",
+    "chatgpt-4o": "October 2023",
+    "gpt-4": "December 2023",
+    "o1": "October 2023",
+    "o3": "October 2023",
+    # Google models
+    "gemini-2.0-flash": "August 2024",
     # Anthropic models
-    "anthropic/claude-3-opus-20240229": "August 2023",
-    "anthropic/claude-3-sonnet-20240229": "August 2023",
+    "anthropic/claude-3-7-sonnet": "November 2024",
+    "anthropic/claude-3-5-sonnet": "April 2024",
+    "anthropic/claude-3-5-haiku": "July 2024",
+    "anthropic/claude-3-opus-latest": "August 2023",
+    "anthropic/claude-3-haiku": "August 2023",
     # Add more models and their cutoff dates here
 }
 
@@ -128,7 +138,19 @@ async def set_system_prompt(update: Update, context: CallbackContext) -> None:
 async def list_models(update: Update, context: CallbackContext) -> None:
     model_details = []
     for model_id in model_ids:
-        cutoff = model_cutoffs.get(model_id, "Unknown")
+        # Finds the most specific model cutoff date
+        cutoff = next(
+            (
+                cutoff
+                for key, cutoff in sorted(
+                    model_cutoffs.items(),
+                    key=lambda x: len(os.path.commonprefix([model_id, x[0]])),
+                    reverse=True,
+                )
+                if model_id.startswith(key)
+            ),
+            "Unknown",
+        )
         model_details.append(f"• `{model_id}`\n  ↳ Knowledge cutoff: {cutoff}")
 
     await send_long_message(
