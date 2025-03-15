@@ -25,11 +25,9 @@ model_cutoffs = {
     # OpenAI models
     "gpt-4o": "April 2023",
     "gpt-3.5-turbo": "September 2021",
-    
     # Anthropic models
     "anthropic/claude-3-opus-20240229": "August 2023",
     "anthropic/claude-3-sonnet-20240229": "August 2023",
-    
     # Add more models and their cutoff dates here
 }
 
@@ -131,8 +129,8 @@ async def list_models(update: Update, context: CallbackContext) -> None:
     model_details = []
     for model_id in model_ids:
         cutoff = model_cutoffs.get(model_id, "Unknown")
-        model_details.append(f"• *{model_id}*\n  ↳ Knowledge cutoff: {cutoff}")
-        
+        model_details.append(f"• `{model_id}`\n  ↳ Knowledge cutoff: {cutoff}")
+
     await send_long_message(
         update,
         context,
