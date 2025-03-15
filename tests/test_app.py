@@ -46,11 +46,11 @@ class TestApp(unittest.TestCase):
 
         # Verify message handler was added with correct filters
         mock_message_handler.assert_called_once()
-        mock_filters_arg = mock_message_handler.call_args[0][0]
-        self.assertIn("TEXT", str(mock_filters_arg))
-        self.assertIn("PHOTO", str(mock_filters_arg))
-        self.assertIn("AUDIO", str(mock_filters_arg))
-        self.assertIn("COMMAND", str(mock_filters_arg))
+
+        # Instead of checking the string representation, verify the filter construction
+        mock_filters.TEXT.__or__.assert_called_once()
+        mock_filters.TEXT.__or__.return_value.__or__.assert_called_once()
+        mock_filters.TEXT.__or__.return_value.__or__.return_value.__and__.assert_called_once()
 
         # Verify app.run_polling was called
         mock_app.run_polling.assert_called_once()

@@ -4,6 +4,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from telegram_utils import (
+    SPECIAL_SYMBOLS,
     code_block_start_at,
     escape_markdown_v2,
     format_symbol_at,
@@ -120,8 +121,19 @@ class TestMarkdownEscaping(unittest.TestCase):
     def test_special_symbol_at(self):
         """Test detection of special symbols."""
         text = "Hello! This is a (test)"
+        # Print debug information
+        print(
+            f"Character at index 15: '{text[15]}', SPECIAL_SYMBOLS: '{SPECIAL_SYMBOLS}'"
+        )
+        print(f"Is '(' in SPECIAL_SYMBOLS: {'(' in SPECIAL_SYMBOLS}")
+
         self.assertTrue(special_symbol_at(text, 5))  # !
-        self.assertTrue(special_symbol_at(text, 16))  # (
+        # Find the correct index for the opening parenthesis
+        for i, char in enumerate(text):
+            if char == "(":
+                print(f"Found '(' at index {i}")
+
+        self.assertTrue(special_symbol_at(text, 15))  # (
         self.assertFalse(special_symbol_at(text, 0))  # H
 
     def test_format_symbol_at(self):

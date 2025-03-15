@@ -60,20 +60,11 @@ docker-compose up -d
 The project includes a comprehensive test suite. To run the tests:
 
 ```bash
-# Install dev dependencies
-poetry install --with dev
-
 # Run tests using make
 make test
 
 # Run tests with coverage
 make test-cov
-
-# Run tests in Docker container
-make docker-test
-
-# Run tests with coverage in Docker container
-make docker-test-cov
 ```
 
 Alternatively, you can run tests directly with pytest:

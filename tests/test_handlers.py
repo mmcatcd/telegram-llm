@@ -343,56 +343,71 @@ class TestOtherCommands(unittest.TestCase):
 class TestMessageProcessing(unittest.TestCase):
     """Tests for message processing functions."""
 
-    def test_get_user_conversations_table(self):
+    @patch("handlers.sqlite_utils")
+    def test_get_user_conversations_table(self, mock_sqlite_utils):
         """Test the _get_user_conversations_table function."""
-        # Create a mock database
+        # Create a mock database and table
         mock_db = MagicMock()
-        mock_db.table.return_value = "user_conversations_table"
+        mock_table = MagicMock()
+        mock_db.table.return_value = mock_table
+        mock_table.exists.return_value = False
 
         # Call the function
         result = _get_user_conversations_table(mock_db)
 
         # Assert the correct table was requested
-        mock_db.table.assert_called_once_with("user_conversations")
-        self.assertEqual(result, "user_conversations_table")
+        mock_db.table.assert_called_once_with("user_conversations", pk=("user_id",))
+        # Assert the table was created if it didn't exist
+        mock_table.create.assert_called_once()
+        # Assert the function returned the table
+        self.assertEqual(result, mock_table)
 
     def test_get_user_conversation_id_exists(self):
         """Test the _get_user_conversation_id function when a conversation exists."""
         # Create a mock table with a conversation for the user
         mock_table = MagicMock()
-        mock_table.get.return_value = {"conversation_id": "conv123"}
+        mock_table.rows_where.return_value = [{"conversation_id": "conv123"}]
 
         # Call the function
         result = _get_user_conversation_id(mock_table, 123)
 
+        # Assert the correct query was made
+        mock_table.rows_where.assert_called_once_with("user_id = ?", [123], limit=1)
         # Assert the correct conversation ID was returned
-        mock_table.get.assert_called_once_with("123")
         self.assertEqual(result, "conv123")
 
     def test_get_user_conversation_id_not_exists(self):
         """Test the _get_user_conversation_id function when no conversation exists."""
         # Create a mock table with no conversation for the user
         mock_table = MagicMock()
-        mock_table.get.return_value = None
+        mock_table.rows_where.return_value = []
 
         # Call the function
         result = _get_user_conversation_id(mock_table, 123)
 
+        # Assert the correct query was made
+        mock_table.rows_where.assert_called_once_with("user_id = ?", [123], limit=1)
         # Assert None was returned
-        mock_table.get.assert_called_once_with("123")
         self.assertIsNone(result)
 
-    def test_set_user_conversation_id(self):
+    @patch("handlers.datetime")
+    def test_set_user_conversation_id(self, mock_datetime):
         """Test the _set_user_conversation_id function."""
-        # Create a mock table
+        # Create a mock table and datetime
         mock_table = MagicMock()
+        mock_datetime.now.return_value.isoformat.return_value = "2023-01-01T12:00:00"
 
         # Call the function
         _set_user_conversation_id(mock_table, "conv123", 123)
 
         # Assert the conversation ID was set correctly
         mock_table.upsert.assert_called_once_with(
-            {"id": "123", "conversation_id": "conv123"}, pk="id"
+            {
+                "user_id": 123,
+                "conversation_id": "conv123",
+                "last_used": "2023-01-01T12:00:00",
+            },
+            pk="user_id",
         )
 
 
