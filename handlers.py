@@ -13,10 +13,25 @@ from telegram.ext import CallbackContext
 from config import default_model_id
 from telegram_utils import restricted, send_long_message
 
+# Get all available model IDs
 model_ids = [
     model_with_alias.model.model_id
     for model_with_alias in llm.get_models_with_aliases()
 ]
+
+# Dictionary mapping model IDs to their knowledge cutoff dates
+# Fill in the accurate cutoff dates from provider documentation
+model_cutoffs = {
+    # OpenAI models
+    "gpt-4o": "April 2023",
+    "gpt-3.5-turbo": "September 2021",
+    
+    # Anthropic models
+    "anthropic/claude-3-opus-20240229": "August 2023",
+    "anthropic/claude-3-sonnet-20240229": "August 2023",
+    
+    # Add more models and their cutoff dates here
+}
 
 MESSAGE_HISTORY_LIMIT = 15
 
@@ -113,10 +128,15 @@ async def set_system_prompt(update: Update, context: CallbackContext) -> None:
 
 @restricted
 async def list_models(update: Update, context: CallbackContext) -> None:
+    model_details = []
+    for model_id in model_ids:
+        cutoff = model_cutoffs.get(model_id, "Unknown")
+        model_details.append(f"• *{model_id}*\n  ↳ Knowledge cutoff: {cutoff}")
+        
     await send_long_message(
         update,
         context,
-        "\n".join("`" + model_id + "`" for model_id in model_ids),
+        "\n".join(model_details),
         parse_mode="Markdown",
     )
 
@@ -137,7 +157,7 @@ async def help(update: Update, context: CallbackContext) -> None:
     Available commands:
     `/private` - Send a message in isolation of the chat conversation
         - Example: `/private What is integer interning in python?`
-    `/models` - Get a list of available models that you can use
+    `/models` - Get a list of available models with their knowledge cutoff dates
     `/model` - Get the current model being used
     `/set_model` - Set the model being used
     `/system_prompt` - Get the current system prompt being used
