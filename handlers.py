@@ -1,4 +1,5 @@
 from datetime import datetime
+from inspect import cleandoc
 
 import llm
 import logfire
@@ -116,19 +117,19 @@ async def attachment_types(update: Update, context: CallbackContext) -> None:
 
 async def help(update: Update, context: CallbackContext) -> None:
     """Send a message with a list of available commands."""
-    help_text = """
+    help_text = cleandoc("""
     Available commands:
-    /private - Send a message in isolation of the chat conversation
-        - Example: /private What is integer interning in python?
-    /models - Get a list of available models that you can use
-    /model - Get the current model being used
-    /set_model - Set the model being used
-    /system_prompt - Get the current system prompt being used
-    /set_system_prompt - Set the system prompt
-    /attachment_types - Get the attachment types supported by the current model
-    /help - Show this help message
-    """
-    await update.message.reply_text(help_text)
+    `/private` - Send a message in isolation of the chat conversation
+        - Example: `/private What is integer interning in python?`
+    `/models` - Get a list of available models that you can use
+    `/model` - Get the current model being used
+    `/set_model` - Set the model being used
+    `/system_prompt` - Get the current system prompt being used
+    `/set_system_prompt` - Set the system prompt
+    `/attachment_types` - Get the attachment types supported by the current model
+    `/help` - Show this help message
+    """)
+    await send_long_message(update, context, help_text, parse_mode="MarkdownV2")
 
 
 @restricted
