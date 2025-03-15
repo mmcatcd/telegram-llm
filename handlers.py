@@ -219,7 +219,7 @@ async def process_message(update: Update, context: CallbackContext) -> None:
     """Processes a message from the user, gets an answer, and sends it back."""
 
     # Send a "Thinking..." message first
-    thinking_message = await update.message.reply_text("Thinking...")
+    thinking_message = await update.message.reply_text("...")
 
     current_user_id = update.effective_user.id
 
