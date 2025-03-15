@@ -218,6 +218,9 @@ def _set_user_conversation_id(
 async def process_message(update: Update, context: CallbackContext) -> None:
     """Processes a message from the user, gets an answer, and sends it back."""
 
+    # Send a "Thinking..." message first
+    thinking_message = await update.message.reply_text("Thinking...")
+
     current_user_id = update.effective_user.id
 
     db = sqlite_utils.Database(logs_db_path())
@@ -255,10 +258,11 @@ async def process_message(update: Update, context: CallbackContext) -> None:
     if update.message.photo:
         # Check if current model supports images.
         if "image/jpeg" not in model.attachment_types:
-            return await update.message.reply_text(
+            await thinking_message.edit_text(
                 "The current model doesn't support image attachments. "
                 "Please switch to a model type that supports images."
             )
+            return
 
         photo_file = await update.message.photo[-1].get_file()
         photo_content = await photo_file.download_as_bytearray()
@@ -274,7 +278,7 @@ async def process_message(update: Update, context: CallbackContext) -> None:
     try:
         response_text = response.text()
     except Exception as e:
-        await update.message.reply_text(
+        await thinking_message.edit_text(
             f"Something went wrong when trying to call the LLM: {e}"
         )
         logfire.error(e)
@@ -284,9 +288,19 @@ async def process_message(update: Update, context: CallbackContext) -> None:
     response.log_to_db(db)
 
     try:
-        await send_long_message(update, context, response_text, parse_mode="Markdown")
+        # Edit the "Thinking..." message with the actual response
+        await thinking_message.edit_text(response_text, parse_mode="Markdown")
     except BadRequest:
-        await send_long_message(update, context, response_text)
+        # If Markdown parsing fails, try without it
+        try:
+            await thinking_message.edit_text(response_text)
+        except BadRequest as e:
+            # If the message is too long for a single edit, use send_long_message
+            logfire.warning(
+                f"Failed to edit message: {e}. Falling back to send_long_message"
+            )
+            await thinking_message.delete()
+            await send_long_message(update, context, response_text)
 
     logfire.info(f"Message: {response_text} Usage: {response.usage()}")
 
