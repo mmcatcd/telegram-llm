@@ -43,7 +43,15 @@ def main():
     # Handles non-command messages, sends to Agent, and returns reply.
     app.add_handler(
         MessageHandler(
-            (filters.TEXT | filters.PHOTO | filters.AUDIO) & ~filters.COMMAND,
+            (
+                filters.TEXT
+                | filters.PHOTO
+                | filters.AUDIO
+                | filters.ATTACHMENT
+                | filters.VIDEO
+                | filters.VOICE
+            )
+            & ~filters.COMMAND,
             process_message,
         )
     )

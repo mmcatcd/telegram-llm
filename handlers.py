@@ -241,13 +241,8 @@ async def process_message(update: Update, context: CallbackContext) -> None:
         )
     else:
         conversation = load_conversation(conversation_id)
-
-        # We have to explicitly change the model type to force it to switch.
         conversation.model = model
-
-        # Explicitly setting the message limit so it doesn't cost me a bomb.
         conversation.responses = conversation.responses[-MESSAGE_HISTORY_LIMIT:]
-
         logfire.info(f"Number of responses: {len(conversation.responses)}")
 
     attachments = []
@@ -255,20 +250,68 @@ async def process_message(update: Update, context: CallbackContext) -> None:
         update.message.text if update.message.text else update.message.caption
     )
     logfire.info(f"Prompt: {message_text}")
+
+    # Handle different types of attachments
     if update.message.photo:
-        # Check if current model supports images.
         if "image/jpeg" not in model.attachment_types:
             await thinking_message.edit_text(
                 "The current model doesn't support image attachments. "
                 "Please switch to a model type that supports images."
             )
             return
-
         photo_file = await update.message.photo[-1].get_file()
         photo_content = await photo_file.download_as_bytearray()
-        attachments.append(
-            llm.Attachment(content=photo_content),
-        )
+        attachments.append(llm.Attachment(content=photo_content))
+
+    elif update.message.document:
+        if update.message.document.mime_type != "application/pdf":
+            return await thinking_message.edit_text(
+                "Only PDF documents are currently supported. "
+                "The file you sent appears to be: "
+                f"{update.message.document.mime_type or 'unknown type'}"
+            )
+
+        if "application/pdf" not in model.attachment_types:
+            return await thinking_message.edit_text(
+                "The current model doesn't support document attachments. "
+                "Please switch to a model type that supports documents."
+            )
+        doc_file = await update.message.document.get_file()
+        doc_content = await doc_file.download_as_bytearray()
+        attachments.append(llm.Attachment(content=doc_content))
+
+    elif update.message.video:
+        if "video/mp4" not in model.attachment_types:
+            await thinking_message.edit_text(
+                "The current model doesn't support video attachments. "
+                "Please switch to a model type that supports videos."
+            )
+            return
+        video_file = await update.message.video.get_file()
+        video_content = await video_file.download_as_bytearray()
+        attachments.append(llm.Attachment(content=video_content))
+
+    elif update.message.audio:
+        if "audio/mpeg" not in model.attachment_types:
+            await thinking_message.edit_text(
+                "The current model doesn't support audio attachments. "
+                "Please switch to a model type that supports audio."
+            )
+            return
+        audio_file = await update.message.audio.get_file()
+        audio_content = await audio_file.download_as_bytearray()
+        attachments.append(llm.Attachment(content=audio_content))
+
+    elif update.message.voice:
+        if "audio/ogg" not in model.attachment_types:
+            await thinking_message.edit_text(
+                "The current model doesn't support voice attachments. "
+                "Please switch to a model type that supports voice messages."
+            )
+            return
+        voice_file = await update.message.voice.get_file()
+        voice_content = await voice_file.download_as_bytearray()
+        attachments.append(llm.Attachment(content=voice_content))
 
     response = conversation.prompt(
         message_text,
