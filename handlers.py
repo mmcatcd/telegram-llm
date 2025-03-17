@@ -257,21 +257,24 @@ def _set_user_conversation_id(
 def _get_responses_compatible_with_model(
     conversation: llm.Conversation, model: llm.Model
 ) -> list[llm.Response]:
-    # Filter out responses with incompatible attachments
+    # Keep responses but remove incompatible attachments
     filtered_responses = []
     for response in conversation.responses[-MESSAGE_HISTORY_LIMIT:]:
-        # Check if response has attachments
-        has_incompatible_attachments = False
         if hasattr(response, "attachments") and response.attachments:
-            for attachment in response.attachments:
-                # Get the MIME type of the attachment
-                mime_type = getattr(attachment, "mime_type", None)
-                if mime_type and mime_type not in model.attachment_types:
-                    has_incompatible_attachments = True
-                    break
+            # Create a copy of the response to avoid modifying the original
+            response_copy = response
+            compatible_attachments = []
 
-        if not has_incompatible_attachments:
-            filtered_responses.append(response)
+            for attachment in response.attachments:
+                mime_type = getattr(attachment, "mime_type", None)
+                if mime_type and mime_type in model.attachment_types:
+                    compatible_attachments.append(attachment)
+
+            # Only update attachments if there were any incompatible ones
+            if len(compatible_attachments) != len(response.attachments):
+                response_copy.attachments = compatible_attachments
+
+        filtered_responses.append(response)
 
     return filtered_responses
 
