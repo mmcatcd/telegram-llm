@@ -254,6 +254,28 @@ def _set_user_conversation_id(
     )
 
 
+def _get_responses_compatible_with_model(
+    conversation: llm.Conversation, model: llm.Model
+) -> list[llm.Response]:
+    # Filter out responses with incompatible attachments
+    filtered_responses = []
+    for response in conversation.responses[-MESSAGE_HISTORY_LIMIT:]:
+        # Check if response has attachments
+        has_incompatible_attachments = False
+        if hasattr(response, "attachments") and response.attachments:
+            for attachment in response.attachments:
+                # Get the MIME type of the attachment
+                mime_type = getattr(attachment, "mime_type", None)
+                if mime_type and mime_type not in model.attachment_types:
+                    has_incompatible_attachments = True
+                    break
+
+        if not has_incompatible_attachments:
+            filtered_responses.append(response)
+
+    return filtered_responses
+
+
 @restricted
 async def process_message(update: Update, context: CallbackContext) -> None:
     """Processes a message from the user, gets an answer, and sends it back."""
@@ -282,7 +304,9 @@ async def process_message(update: Update, context: CallbackContext) -> None:
     else:
         conversation = load_conversation(conversation_id)
         conversation.model = model
-        conversation.responses = conversation.responses[-MESSAGE_HISTORY_LIMIT:]
+        conversation.responses = _get_responses_compatible_with_model(
+            conversation, model
+        )
         logfire.info(f"Number of responses: {len(conversation.responses)}")
 
     attachments = []
