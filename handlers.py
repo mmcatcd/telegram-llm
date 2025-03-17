@@ -260,19 +260,21 @@ def _get_responses_compatible_with_model(
     # Keep responses but remove incompatible attachments
     filtered_responses = []
     for response in conversation.responses[-MESSAGE_HISTORY_LIMIT:]:
+        # For responses with attachments, we need to handle them carefully
         if hasattr(response, "attachments") and response.attachments:
-            # Create a copy of the response to avoid modifying the original
-            response_copy = response
-            compatible_attachments = []
+            # Check if any attachments are incompatible
+            has_incompatible_attachments = any(
+                getattr(attachment, "mime_type", None) not in model.attachment_types
+                for attachment in response.attachments
+            )
 
-            for attachment in response.attachments:
-                mime_type = getattr(attachment, "mime_type", None)
-                if mime_type and mime_type in model.attachment_types:
-                    compatible_attachments.append(attachment)
-
-            # Only update attachments if there were any incompatible ones
-            if len(compatible_attachments) != len(response.attachments):
-                response_copy.attachments = compatible_attachments
+            if has_incompatible_attachments:
+                # Instead of modifying the response, we'll log that attachments were removed
+                logfire.info(
+                    "Removing incompatible attachments from conversation history"
+                )
+                # Set attachments to empty list instead of trying to filter them
+                response.attachments = []
 
         filtered_responses.append(response)
 
