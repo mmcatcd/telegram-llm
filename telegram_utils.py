@@ -212,18 +212,23 @@ async def send_long_message(update, context, text: str, parse_mode=None):
     if len(text) <= MAX_MESSAGE_LENGTH:
         return await update.message.reply_text(text, parse_mode=parse_mode)
 
+    # Calculate prefix length to account for "(Part X/Y)\n\n"
+    # Using len(str(len(text))) to account for number of digits in total parts
+    prefix_length = len(f"(Part {len(str(len(text)))}/{len(str(len(text)))})\n\n")
+    max_part_length = MAX_MESSAGE_LENGTH - prefix_length
+
     # Split into parts, trying to break at newlines when possible
     parts = []
     while text:
-        if len(text) <= MAX_MESSAGE_LENGTH:
+        if len(text) <= max_part_length:
             parts.append(text)
             break
 
         # Try to find a newline to split at
-        split_index = text.rfind("\n", 0, MAX_MESSAGE_LENGTH)
+        split_index = text.rfind("\n", 0, max_part_length)
         if split_index == -1:
             # No newline found, split at maximum length
-            split_index = MAX_MESSAGE_LENGTH
+            split_index = max_part_length
 
         parts.append(text[:split_index])
         text = text[split_index:].lstrip()
