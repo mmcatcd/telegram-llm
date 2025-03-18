@@ -309,9 +309,7 @@ async def process_message(update: Update, context: CallbackContext) -> None:
     else:
         conversation = load_conversation(conversation_id)
         conversation.model = model
-        conversation.responses = _get_responses_compatible_with_model(
-            conversation, model
-        )
+        conversation.responses = conversation.responses[-MESSAGE_HISTORY_LIMIT:]
         logfire.info(f"Number of responses: {len(conversation.responses)}")
 
     attachments = []
