@@ -272,7 +272,11 @@ def _set_chat_conversation_id(
 def _get_responses_compatible_with_model(
     conversation: llm.Conversation, model: llm.Model
 ) -> list[llm.Response]:
-    # Keep responses but remove incompatible attachments
+    """
+    We need to remove any responses from the conversation history that have incompatible attachments.
+    Initially I thought we could just filter the attachments out, but that doesn't seem to work because
+    the underlying model calls generated are not compatible with the input messages that have the attachments.
+    """
     filtered_responses = []
     for response in conversation.responses[-MESSAGE_HISTORY_LIMIT:]:
         # For responses with attachments, we need to handle them carefully
@@ -284,12 +288,7 @@ def _get_responses_compatible_with_model(
             )
 
             if has_incompatible_attachments:
-                # Instead of modifying the response, we'll log that attachments were removed
-                logfire.info(
-                    "Removing incompatible attachments from conversation history"
-                )
-                # Set attachments to empty list instead of trying to filter them
-                response.attachments = []
+                continue
 
         filtered_responses.append(response)
 
@@ -322,7 +321,9 @@ async def process_message(update: Update, context: CallbackContext) -> None:
     else:
         conversation = load_conversation(conversation_id)
         conversation.model = model
-        conversation.responses = conversation.responses[-MESSAGE_HISTORY_LIMIT:]
+        conversation.responses = _get_responses_compatible_with_model(
+            conversation, model
+        )
         logfire.info(f"Number of responses: {len(conversation.responses)}")
 
     attachments = []
