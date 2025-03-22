@@ -136,19 +136,8 @@ async def set_system_prompt(update: Update, context: CallbackContext) -> None:
 
 @restricted
 async def list_models(update: Update, context: CallbackContext) -> None:
-    # Find the longest model_id for formatting
-    max_model_length = max(len(model_id) for model_id in model_ids)
-
-    # Create header and separator for the table
-    header = f"{'Model'.ljust(max_model_length)}  |  Knowledge Cutoff"
-    separator = f"{'-' * max_model_length}--+--{'-' * 16}"
-
-    model_details = [header, separator]
-
-    # Sort model IDs for better readability
-    sorted_model_ids = sorted(model_ids)
-
-    for model_id in sorted_model_ids:
+    model_details = []
+    for model_id in model_ids:
         # Finds the most specific model cutoff date
         cutoff = next(
             (
@@ -162,13 +151,12 @@ async def list_models(update: Update, context: CallbackContext) -> None:
             ),
             "Unknown",
         )
-        # Format as a table row with aligned columns
-        model_details.append(f"{model_id.ljust(max_model_length)}  |  {cutoff}")
+        model_details.append(f"• `{model_id}`\n")
 
     await send_long_message(
         update,
         context,
-        model_details,
+        "\n".join(model_details),
         parse_mode="Markdown",
     )
 
