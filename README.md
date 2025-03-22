@@ -59,6 +59,7 @@ docker-compose up -d
 
 ## Special Syntax
 
+- `@think` - Make the model show its thinking and reasoning process before answering
 - `@web your search query` - Search the web for information related to your query
 - `@https://example.com` or `@example.com/page` - Scrape a webpage and include its content in the LLM context
 

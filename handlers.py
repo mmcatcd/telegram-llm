@@ -191,6 +191,8 @@ async def help(update: Update, context: CallbackContext) -> None:
     `/help` - Show this help message
     
     Special syntax:
+    `@think` - Make the model think step-by-step and show its reasoning process
+        - Example: `@think What would happen if gravity suddenly increased by 10%?`
     `@web search query` - Search the web for information related to your query
         - Example: `@web latest quantum computing breakthroughs`
     `@https://example.com` or `@example.com/path` - Scrape a webpage and include its content in the context
@@ -397,6 +399,45 @@ async def process_message(update: Update, context: CallbackContext) -> None:
             </source_context>
             """)
             additional_context += source_context
+
+    # Check if this is a thinking request
+    thinking_requested = "@think" in message_text
+    thinking_output = ""
+
+    if thinking_requested:
+        # Remove the @think command from the message
+        clean_message = message_text.replace("@think", "").strip()
+
+        # Create a thinking prompt with instructions
+        thinking_prompt = cleandoc(f"""
+        This is a message from the user: "{clean_message}"
+        
+        Think step-by-step about your answer. Consider multiple different paths.
+        Critique your thinking and backtrack if necessary.
+        Explain your reasoning process thoroughly.
+        """)
+
+        # Make the initial "thinking" call to the model
+        thinking_response = conversation.prompt(thinking_prompt)
+        thinking_output = thinking_response.text()
+
+        # Log the thinking output
+        logfire.info(f"Thinking output: {thinking_output[:100]}...")
+
+        # Send the thinking output to the user in an expandable blockquote
+        await thinking_message.edit_text(
+            f"<blockquote expandable>\n{thinking_output}\n</blockquote>",
+            parse_mode="HTML",
+        )
+
+        # Create a new thinking message for the final response
+        thinking_message = await update.message.reply_text("...")
+
+        # Add the thinking output to the context for the final response
+        additional_context += f"\n\n<thinking>\n{thinking_output}\n</thinking>\n\n"
+
+        # Use the clean message (without @think) for the final prompt
+        message_text = clean_message
 
     # Check for @web search commands
     web_search_pattern = r"@web"
