@@ -5,6 +5,7 @@ from inspect import cleandoc
 
 import llm
 import logfire
+import requests
 import sqlite_utils
 from firecrawl import FirecrawlApp
 from llm.cli import load_conversation, logs_db_path
@@ -13,7 +14,7 @@ from telegram import Update
 from telegram.error import BadRequest
 from telegram.ext import CallbackContext
 
-from config import default_model_id, firecrawl_api_key
+from config import brave_search_api_key, default_model_id, firecrawl_api_key
 from telegram_utils import restricted, send_long_message
 
 # Get all available model IDs
@@ -188,6 +189,12 @@ async def help(update: Update, context: CallbackContext) -> None:
     `/set_system_prompt` - Set the system prompt
     `/attachment_types` - Get the attachment types supported by the current model
     `/help` - Show this help message
+    
+    Special syntax:
+    `@web search query` - Search the web for information related to your query
+        - Example: `@web latest quantum computing breakthroughs`
+    `@https://example.com` or `@example.com/path` - Scrape a webpage and include its content in the context
+        - Example: `Explain this documentation page @https://docs.python.org/3/tutorial/classes.html`
     """)
     await send_long_message(update, context, help_text, parse_mode="Markdown")
 
@@ -299,6 +306,44 @@ def _get_responses_compatible_with_model(
     return filtered_responses
 
 
+def _perform_web_search(query: str) -> str:
+    """Perform a web search using the Brave Search API and return the formatted results."""
+    headers = {
+        "Accept": "application/json",
+        "Accept-Encoding": "gzip",
+        "X-Subscription-Token": brave_search_api_key,
+    }
+
+    params = {
+        "q": query,
+        "count": 10,  # Number of results to return
+    }
+
+    try:
+        response = requests.get(
+            "https://api.search.brave.com/res/v1/web/search",
+            headers=headers,
+            params=params,
+        )
+        response.raise_for_status()
+        results = response.json()
+
+        # Format the results as markdown
+        if "web" in results and "results" in results["web"]:
+            formatted_results = "### Web Search Results\n\n"
+            for result in results["web"]["results"]:
+                title = result.get("title", "No title")
+                url = result.get("url", "")
+                description = result.get("description", "No description available")
+                formatted_results += f"**[{title}]({url})**\n{description}\n\n"
+            return formatted_results
+        else:
+            return "No search results found."
+    except Exception as e:
+        logfire.error(f"Error performing web search: {e}")
+        return f"Error performing web search: {str(e)}"
+
+
 @restricted
 async def process_message(update: Update, context: CallbackContext) -> None:
     """Processes a message from the user, gets an answer, and sends it back."""
@@ -352,6 +397,33 @@ async def process_message(update: Update, context: CallbackContext) -> None:
             </source_context>
             """)
             additional_context += source_context
+
+    # Check for @web search commands
+    web_search_pattern = r"@web"
+    web_searches = re.findall(web_search_pattern, message_text)
+
+    if web_searches:
+        search_prompt = f"Based on this message: '{message_text}', create a specific web search query that will help answer the user's question. Make it concise but specific."
+        search_response = model.prompt(search_prompt)
+        search_query = search_response.text().strip()
+
+        logfire.info(f"Web search query: {search_query}")
+
+        # Perform the web search
+        search_results = _perform_web_search(search_query)
+
+        logfire.info(f"Web search results: {search_results}")
+
+        # Add the search results to the context
+        web_context = cleandoc(f"""
+        <web_search_results query="{search_query}">
+        {search_results}
+        </web_search_results>
+        """)
+        additional_context += "\n\n" + web_context
+
+        # Remove the @web part from the message
+        message_text = message_text.replace("@web", "").strip()
 
     # Handle different types of attachments
     if update.message.photo:

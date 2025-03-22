@@ -28,6 +28,8 @@ poetry install
 TELEGRAM_BOT_TOKEN=your_telegram_bot_token
 ADMINS=["your_telegram_user_id"]
 LOGFIRE_API_KEY=your_logfire_api_key
+FIRECRAWL_API_KEY=your_firecrawl_api_key
+BRAVE_SEARCH_API_KEY=your_brave_search_api_key
 ```
 
 ## Usage
@@ -54,6 +56,11 @@ docker-compose up -d
 - `/_user_id` - Get your user ID
 - `/_chat_id` - Get the current chat ID (admin only)
 - `/private` - Process a message privately (admin only)
+
+## Special Syntax
+
+- `@web your search query` - Search the web for information related to your query
+- `@https://example.com` or `@example.com/page` - Scrape a webpage and include its content in the LLM context
 
 ## Testing
 
@@ -89,7 +96,3 @@ To add a development dependency:
 ```bash
 poetry add --group dev package-name
 ```
-
-## License
-
-[MIT License](LICENSE)
