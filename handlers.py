@@ -1,17 +1,19 @@
 import os
+import re
 from datetime import datetime
 from inspect import cleandoc
 
 import llm
 import logfire
 import sqlite_utils
+from firecrawl import FirecrawlApp
 from llm.cli import load_conversation, logs_db_path
 from llm.migrations import migrate
 from telegram import Update
 from telegram.error import BadRequest
 from telegram.ext import CallbackContext
 
-from config import default_model_id
+from config import default_model_id, firecrawl_api_key
 from telegram_utils import restricted, send_long_message
 
 # Get all available model IDs
@@ -40,6 +42,8 @@ model_cutoffs = {
     "anthropic/claude-3-haiku": "Aug 23",
     # Add more models and their cutoff dates here
 }
+
+firecrawl_app = FirecrawlApp(api_key=firecrawl_api_key)
 
 MESSAGE_HISTORY_LIMIT = 15
 
@@ -332,6 +336,23 @@ async def process_message(update: Update, context: CallbackContext) -> None:
     )
     logfire.info(f"Prompt: {message_text}")
 
+    # Find links in the message text
+    additional_context = ""
+    url_pattern = r"@(https?://[^\s]+|[^\s]+\.[^\s]+/[^\s]*)"
+    urls = re.findall(url_pattern, message_text)
+
+    if urls:
+        for url in urls:
+            scrape_result = firecrawl_app.scrape_url(
+                url, params={"formats": ["markdown"]}
+            )
+            source_context = cleandoc(f"""
+            <source_context url={url}>
+            {scrape_result["markdown"]}
+            </source_context>
+            """)
+            additional_context += source_context
+
     # Handle different types of attachments
     if update.message.photo:
         if "image/jpeg" not in model.attachment_types:
@@ -395,7 +416,7 @@ async def process_message(update: Update, context: CallbackContext) -> None:
         attachments.append(llm.Attachment(content=voice_content))
 
     response = conversation.prompt(
-        message_text,
+        message_text + "\n\n" + additional_context,
         attachments=attachments,
     )
 

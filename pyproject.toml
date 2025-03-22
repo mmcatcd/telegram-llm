@@ -18,6 +18,7 @@ sqlite-utils = "^3.38"
 llm-anthropic = "^0.15.1"
 llm-gemini = "^0.13"
 markdown = "^3.7"
+firecrawl-py = "^1.14.1"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0.0"
