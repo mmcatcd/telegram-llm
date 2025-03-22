@@ -24,20 +24,20 @@ model_ids = [
 # Fill in the accurate cutoff dates from provider documentation
 model_cutoffs = {
     # OpenAI models
-    "gpt-4o": "October 2023",
-    "gpt-3.5-turbo": "September 2021",
-    "chatgpt-4o": "October 2023",
-    "gpt-4": "December 2023",
-    "o1": "October 2023",
-    "o3": "October 2023",
+    "gpt-4o": "Oct 23",
+    "gpt-3.5-turbo": "Sep 21",
+    "chatgpt-4o": "Oct 23",
+    "gpt-4": "Dec 23",
+    "o1": "Oct 23",
+    "o3": "Oct 23",
     # Google models
-    "gemini-2.0-flash": "August 2024",
+    "gemini-2.0-flash": "Aug 24",
     # Anthropic models
-    "anthropic/claude-3-7-sonnet": "November 2024",
-    "anthropic/claude-3-5-sonnet": "April 2024",
-    "anthropic/claude-3-5-haiku": "July 2024",
-    "anthropic/claude-3-opus-latest": "August 2023",
-    "anthropic/claude-3-haiku": "August 2023",
+    "anthropic/claude-3-7-sonnet": "Nov 24",
+    "anthropic/claude-3-5-sonnet": "Apr 24",
+    "anthropic/claude-3-5-haiku": "Jul 24",
+    "anthropic/claude-3-opus-latest": "Aug 23",
+    "anthropic/claude-3-haiku": "Aug 23",
     # Add more models and their cutoff dates here
 }
 
@@ -136,8 +136,19 @@ async def set_system_prompt(update: Update, context: CallbackContext) -> None:
 
 @restricted
 async def list_models(update: Update, context: CallbackContext) -> None:
-    model_details = []
-    for model_id in model_ids:
+    # Find the longest model_id for formatting
+    max_model_length = max(len(model_id) for model_id in model_ids)
+
+    # Create header and separator for the table
+    header = f"{'Model'.ljust(max_model_length)}  |  Knowledge Cutoff"
+    separator = f"{'-' * max_model_length}--+--{'-' * 16}"
+
+    model_details = [header, separator]
+
+    # Sort model IDs for better readability
+    sorted_model_ids = sorted(model_ids)
+
+    for model_id in sorted_model_ids:
         # Finds the most specific model cutoff date
         cutoff = next(
             (
@@ -151,12 +162,13 @@ async def list_models(update: Update, context: CallbackContext) -> None:
             ),
             "Unknown",
         )
-        model_details.append(f"• `{model_id}`\n  ↳ Knowledge cutoff: {cutoff}")
+        # Format as a table row with aligned columns
+        model_details.append(f"{model_id.ljust(max_model_length)}  |  {cutoff}")
 
     await send_long_message(
         update,
         context,
-        "\n".join(model_details),
+        "```\n" + "\n".join(model_details) + "\n```",
         parse_mode="Markdown",
     )
 
