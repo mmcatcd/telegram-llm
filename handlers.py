@@ -232,25 +232,40 @@ def _get_user_conversations_table(db) -> None:
     return user_conversations
 
 
-def _get_user_conversation_id(
-    user_conversations_table, current_user_id: int
+def _get_chat_conversations_table(db) -> None:
+    chat_conversations = db.table("chat_conversations", pk=("chat_id",))
+    if not chat_conversations.exists():
+        chat_conversations.create(
+            {
+                "chat_id": int,
+                "conversation_id": str,
+                "last_used": str,
+            },
+            if_not_exists=True,
+        )
+
+    return chat_conversations
+
+
+def _get_chat_conversation_id(
+    chat_conversations_table, current_chat_id: int
 ) -> str | None:
     results = list(
-        user_conversations_table.rows_where("user_id = ?", [current_user_id], limit=1)
+        chat_conversations_table.rows_where("chat_id = ?", [current_chat_id], limit=1)
     )
     return results[0]["conversation_id"] if results else None
 
 
-def _set_user_conversation_id(
-    user_conversations_table, conversation_id: str, current_user_id: int
+def _set_chat_conversation_id(
+    chat_conversations_table, conversation_id: str, current_chat_id: int
 ) -> None:
-    user_conversations_table.upsert(
+    chat_conversations_table.upsert(
         {
-            "user_id": current_user_id,
+            "chat_id": current_chat_id,
             "conversation_id": conversation_id,
             "last_used": datetime.now().isoformat(),
         },
-        pk="user_id",
+        pk="chat_id",
     )
 
 
@@ -288,23 +303,21 @@ async def process_message(update: Update, context: CallbackContext) -> None:
     # Send a "Thinking..." message first
     thinking_message = await update.message.reply_text("...")
 
-    current_user_id = update.effective_user.id
-
     db = sqlite_utils.Database(logs_db_path())
     migrate(db)  # Migrate the DB before using it, as `log_to_db` doesn't do a migration
 
-    user_conversations_table = _get_user_conversations_table(db)
+    chat_conversations_table = _get_chat_conversations_table(db)
 
-    conversation_id = _get_user_conversation_id(
-        user_conversations_table, current_user_id
+    conversation_id = _get_chat_conversation_id(
+        chat_conversations_table, update.effective_chat.id
     )
     model_id = context.user_data.get("model_id", default_model_id)
     model = llm.get_model(model_id)
 
     if not conversation_id:
         conversation = model.conversation()
-        _set_user_conversation_id(
-            user_conversations_table, conversation.id, current_user_id
+        _set_chat_conversation_id(
+            chat_conversations_table, conversation.id, update.effective_chat.id
         )
     else:
         conversation = load_conversation(conversation_id)
