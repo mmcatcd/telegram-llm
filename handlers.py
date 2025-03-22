@@ -422,11 +422,11 @@ async def process_message(update: Update, context: CallbackContext) -> None:
         thinking_output = thinking_response.text()
 
         # Log the thinking output
-        logfire.info(f"Thinking output: {thinking_output[:100]}...")
+        logfire.info(f"Thinking output: {thinking_output}...")
 
         # Send the thinking output to the user in an expandable blockquote
         await thinking_message.edit_text(
-            f"<blockquote expandable>\n{thinking_output}\n</blockquote>",
+            f"<blockquote expandable>\n<pre>{thinking_output}</pre>\n</blockquote>",
             parse_mode="HTML",
         )
 
