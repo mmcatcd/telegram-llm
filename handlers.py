@@ -151,7 +151,7 @@ async def list_models(update: Update, context: CallbackContext) -> None:
             ),
             "Unknown",
         )
-        model_details.append(f"• `{model_id}`\n")
+        model_details.append(f"• `{model_id}`")
 
     await send_long_message(
         update,
