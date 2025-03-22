@@ -415,6 +415,8 @@ async def process_message(update: Update, context: CallbackContext) -> None:
         Think step-by-step about your answer. Consider multiple different paths.
         Critique your thinking and backtrack if necessary.
         Explain your reasoning process thoroughly.
+
+        Do not include any tags in your response like <thinking> or <thinking_output>.
         """)
 
         # Make the initial "thinking" call to the model
@@ -426,7 +428,7 @@ async def process_message(update: Update, context: CallbackContext) -> None:
 
         # Send the thinking output to the user in an expandable blockquote
         await thinking_message.edit_text(
-            f"<blockquote expandable>\n<pre>{thinking_output}</pre>\n</blockquote>",
+            f"<blockquote expandable>\n{thinking_output}\n</blockquote>",
             parse_mode="HTML",
         )
 
