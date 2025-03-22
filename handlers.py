@@ -168,7 +168,7 @@ async def list_models(update: Update, context: CallbackContext) -> None:
     await send_long_message(
         update,
         context,
-        "```\n" + "\n".join(model_details) + "\n```",
+        model_details,
         parse_mode="Markdown",
     )
 
