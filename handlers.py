@@ -517,6 +517,10 @@ async def process_message(update: Update, context: CallbackContext) -> None:
             return
         audio_file = await update.message.audio.get_file()
         audio_content = await audio_file.download_as_bytearray()
+        logfire.info(f"Audio file mime type: {update.message.audio.mime_type}")
+        logfire.info(
+            f"Audio content type: {type(audio_content)}, length: {len(audio_content) if audio_content is not None else 'None'}"
+        )
         attachments.append(llm.Attachment(content=audio_content))
 
     elif update.message.voice:
@@ -528,6 +532,10 @@ async def process_message(update: Update, context: CallbackContext) -> None:
             return
         voice_file = await update.message.voice.get_file()
         voice_content = await voice_file.download_as_bytearray()
+        logfire.info(f"Voice file mime type: {update.message.voice.mime_type}")
+        logfire.info(
+            f"Voice content type: {type(voice_content)}, length: {len(voice_content) if voice_content is not None else 'None'}"
+        )
         attachments.append(llm.Attachment(content=voice_content))
 
     response = conversation.prompt(
