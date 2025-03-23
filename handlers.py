@@ -378,7 +378,7 @@ async def process_message(update: Update, context: CallbackContext) -> None:
         logfire.info(f"Number of responses: {len(conversation.responses)}")
 
     attachments = []
-    message_text = (
+    message_text: str | None = (
         update.message.text if update.message.text else update.message.caption
     )
     logfire.info(f"Prompt: {message_text}")
@@ -386,7 +386,7 @@ async def process_message(update: Update, context: CallbackContext) -> None:
     # Find links in the message text
     additional_context = ""
     url_pattern = r"@(https?://[^\s]+|[^\s]+\.[^\s]+/[^\s]*)"
-    urls = re.findall(url_pattern, message_text)
+    urls = re.findall(url_pattern, message_text) if message_text else []
 
     if urls:
         for url in urls:
@@ -401,7 +401,7 @@ async def process_message(update: Update, context: CallbackContext) -> None:
             additional_context += source_context
 
     # Check if this is a thinking request
-    thinking_requested = "@think" in message_text
+    thinking_requested = "@think" in message_text if message_text else False
     thinking_output = ""
 
     if thinking_requested:
@@ -443,7 +443,7 @@ async def process_message(update: Update, context: CallbackContext) -> None:
 
     # Check for @web search commands
     web_search_pattern = r"@web"
-    web_searches = re.findall(web_search_pattern, message_text)
+    web_searches = re.findall(web_search_pattern, message_text) if message_text else []
 
     if web_searches:
         search_prompt = f"Based on this message: '{message_text}', create a specific web search query that will help answer the user's question. Make it concise but specific."
@@ -538,8 +538,12 @@ async def process_message(update: Update, context: CallbackContext) -> None:
         )
         attachments.append(llm.Attachment(content=voice_content))
 
+    message_text = (
+        message_text + "\n\n" + additional_context if message_text else message_text
+    )
+
     response = conversation.prompt(
-        message_text + "\n\n" + additional_context,
+        message_text,
         attachments=attachments,
     )
 
