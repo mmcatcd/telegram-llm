@@ -16,7 +16,7 @@ python-dotenv = "^1.0.1"
 llm = "^0.23"
 sqlite-utils = "^3.38"
 llm-anthropic = "^0.15.1"
-llm-gemini = "^0.13"
+llm-gemini = "^0.16"
 markdown = "^3.7"
 firecrawl-py = "^1.14.1"
 

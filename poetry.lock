@@ -703,13 +703,13 @@ test = ["cogapp", "pytest", "pytest-asyncio", "pytest-recording"]
 
 [[package]]
 name = "llm-gemini"
-version = "0.13.1"
+version = "0.16"
 description = "LLM plugin to access Google's Gemini family of models"
 optional = false
 python-versions = "*"
 files = [
-    {file = "llm_gemini-0.13.1-py3-none-any.whl", hash = "sha256:85b481b562a7f9337c7d89a49b033019afd9b20ac41e68ec4060d1a4d424a67a"},
-    {file = "llm_gemini-0.13.1.tar.gz", hash = "sha256:976bb303b390ddd6b091b06c1fdac8f876d1fd479f66fd2bf33c88a52fb12f34"},
+    {file = "llm_gemini-0.16-py3-none-any.whl", hash = "sha256:1b36a46daa119158ef36f0f86f64197776bd701be8355b9c6da078232b5d57b7"},
+    {file = "llm_gemini-0.16.tar.gz", hash = "sha256:48e485e5d6acbac8aa7e1ce9ebffd6c6e7531d5230208ea996ae4dd2a8edf848"},
 ]
 
 [package.dependencies]
@@ -718,7 +718,7 @@ ijson = "*"
 llm = ">=0.23"
 
 [package.extras]
-test = ["nest-asyncio", "pytest", "pytest-recording"]
+test = ["nest-asyncio", "pytest", "pytest-asyncio", "pytest-recording"]
 
 [[package]]
 name = "logfire"
@@ -1794,4 +1794,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "c4984d15c246061259b3f2b34c870f59fc69ccb5af96f582de9f07a13812cc7e"
+content-hash = "a50b98609de65f0b1e5dbe270fa978cc717cfb500d0ed26cfbfa73ab45fc94cc"
