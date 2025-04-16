@@ -13,12 +13,13 @@ python = "^3.12"
 logfire = {extras = ["httpx"], version = "^3.6.4"}
 python-telegram-bot = "^21.11.1"
 python-dotenv = "^1.0.1"
-llm = "^0.23"
+llm = "^0.24.2"
 sqlite-utils = "^3.38"
 llm-anthropic = "^0.15.1"
-llm-gemini = "^0.16"
+llm-gemini = "^0.17"
 markdown = "^3.7"
 firecrawl-py = "^1.14.1"
+llm-openai-plugin = "^0.3"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0.0"

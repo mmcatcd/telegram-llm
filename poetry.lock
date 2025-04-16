@@ -211,6 +211,20 @@ files = [
 ]
 
 [[package]]
+name = "condense-json"
+version = "0.1.2"
+description = "Python function for condensing JSON using replacement strings"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "condense_json-0.1.2-py3-none-any.whl", hash = "sha256:bedc4f9de5c626483e57577adfebb9ef655a3b8ad15ab85401e2fdcc27aa37bb"},
+    {file = "condense_json-0.1.2.tar.gz", hash = "sha256:a161e1984122ad35801cc14ecfe2b38d9d638c8c089e04cb545d26300fdc485e"},
+]
+
+[package.extras]
+test = ["mypy", "pytest"]
+
+[[package]]
 name = "coverage"
 version = "7.6.12"
 description = "Code coverage measurement for Python"
@@ -656,18 +670,19 @@ files = [
 
 [[package]]
 name = "llm"
-version = "0.23"
+version = "0.24.2"
 description = "CLI utility and Python library for interacting with Large Language Models from organizations like OpenAI, Anthropic and Gemini plus local models installed on your own machine."
 optional = false
 python-versions = ">=3.9"
 files = [
-    {file = "llm-0.23-py3-none-any.whl", hash = "sha256:3c6fe7ee80104e0e5dee0eb98a1b2ad00d4874535bbf6fe9578380062cf1ee6d"},
-    {file = "llm-0.23.tar.gz", hash = "sha256:552e549a46cbcae6f3414b8f5952d6651a7f8b60b5f09444057a7a52793a6c8e"},
+    {file = "llm-0.24.2-py3-none-any.whl", hash = "sha256:057f4035560aaf5453dea8758233d83c68be80b8b4bb1bf82babe530c55b52b9"},
+    {file = "llm-0.24.2.tar.gz", hash = "sha256:e14f2722183884ce09692201b54cdd961942492f0d93ca749a62d02b3b8bf43a"},
 ]
 
 [package.dependencies]
 click = "*"
 click-default-group = ">=1.2.3"
+condense-json = ">=0.1.2"
 openai = ">=1.55.3"
 pip = "*"
 pluggy = "*"
@@ -703,13 +718,13 @@ test = ["cogapp", "pytest", "pytest-asyncio", "pytest-recording"]
 
 [[package]]
 name = "llm-gemini"
-version = "0.16"
+version = "0.17"
 description = "LLM plugin to access Google's Gemini family of models"
 optional = false
 python-versions = "*"
 files = [
-    {file = "llm_gemini-0.16-py3-none-any.whl", hash = "sha256:1b36a46daa119158ef36f0f86f64197776bd701be8355b9c6da078232b5d57b7"},
-    {file = "llm_gemini-0.16.tar.gz", hash = "sha256:48e485e5d6acbac8aa7e1ce9ebffd6c6e7531d5230208ea996ae4dd2a8edf848"},
+    {file = "llm_gemini-0.17-py3-none-any.whl", hash = "sha256:f6fda2fda74c5a618f7a916f4dd7fca5b8e7a43297c3f65fcedb23e3c0fccd88"},
+    {file = "llm_gemini-0.17.tar.gz", hash = "sha256:9759282daf1844c5b8313a4966d9f6dfc6997111be7461a78e577d9f4aba952a"},
 ]
 
 [package.dependencies]
@@ -719,6 +734,24 @@ llm = ">=0.23"
 
 [package.extras]
 test = ["nest-asyncio", "pytest", "pytest-asyncio", "pytest-recording"]
+
+[[package]]
+name = "llm-openai-plugin"
+version = "0.3"
+description = "LLM plugin for OpenAI"
+optional = false
+python-versions = ">=3.9"
+files = [
+    {file = "llm_openai_plugin-0.3-py3-none-any.whl", hash = "sha256:5aed314cc890b70e24c00479e1dc26978e0c987e17d819f835d78ec129e8c4fe"},
+    {file = "llm_openai_plugin-0.3.tar.gz", hash = "sha256:b67e032ac31516e7aad3ed23d0540ee19ec5798e4da85fd48b7965ef6ba1db88"},
+]
+
+[package.dependencies]
+llm = ">=0.23"
+openai = ">=1.67.0"
+
+[package.extras]
+test = ["cogapp", "pytest", "pytest-asyncio", "pytest-recording", "syrupy"]
 
 [[package]]
 name = "logfire"
@@ -826,13 +859,13 @@ files = [
 
 [[package]]
 name = "openai"
-version = "1.66.3"
+version = "1.75.0"
 description = "The official Python library for the openai API"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "openai-1.66.3-py3-none-any.whl", hash = "sha256:a427c920f727711877ab17c11b95f1230b27767ba7a01e5b66102945141ceca9"},
-    {file = "openai-1.66.3.tar.gz", hash = "sha256:8dde3aebe2d081258d4159c4cb27bdc13b5bb3f7ea2201d9bd940b9a89faf0c9"},
+    {file = "openai-1.75.0-py3-none-any.whl", hash = "sha256:fe6f932d2ded3b429ff67cc9ad118c71327db32eb9d32dd723de3acfca337125"},
+    {file = "openai-1.75.0.tar.gz", hash = "sha256:fb3ea907efbdb1bcfd0c44507ad9c961afd7dce3147292b54505ecfd17be8fd1"},
 ]
 
 [package.dependencies]
@@ -847,7 +880,8 @@ typing-extensions = ">=4.11,<5"
 
 [package.extras]
 datalib = ["numpy (>=1)", "pandas (>=1.2.3)", "pandas-stubs (>=1.1.0.11)"]
-realtime = ["websockets (>=13,<15)"]
+realtime = ["websockets (>=13,<16)"]
+voice-helpers = ["numpy (>=2.0.2)", "sounddevice (>=0.5.1)"]
 
 [[package]]
 name = "opentelemetry-api"
@@ -1794,4 +1828,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "a50b98609de65f0b1e5dbe270fa978cc717cfb500d0ed26cfbfa73ab45fc94cc"
+content-hash = "ba74c6093db380d991f1ea590c56575bec340ee490ddaa7762c4082178cf461c"
