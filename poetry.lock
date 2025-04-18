@@ -718,13 +718,13 @@ test = ["cogapp", "pytest", "pytest-asyncio", "pytest-recording"]
 
 [[package]]
 name = "llm-gemini"
-version = "0.17"
+version = "0.18.1"
 description = "LLM plugin to access Google's Gemini family of models"
 optional = false
 python-versions = "*"
 files = [
-    {file = "llm_gemini-0.17-py3-none-any.whl", hash = "sha256:f6fda2fda74c5a618f7a916f4dd7fca5b8e7a43297c3f65fcedb23e3c0fccd88"},
-    {file = "llm_gemini-0.17.tar.gz", hash = "sha256:9759282daf1844c5b8313a4966d9f6dfc6997111be7461a78e577d9f4aba952a"},
+    {file = "llm_gemini-0.18.1-py3-none-any.whl", hash = "sha256:962a40bee3d5503b6718d8520cbe88537fed1350357e9f862ea1713c62001807"},
+    {file = "llm_gemini-0.18.1.tar.gz", hash = "sha256:199d4fa463b76d22d9fe02257aab8812176ec140740f928a9ee63bc6a53e2a41"},
 ]
 
 [package.dependencies]
@@ -1828,4 +1828,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "ba74c6093db380d991f1ea590c56575bec340ee490ddaa7762c4082178cf461c"
+content-hash = "c2e5cd35c158e1d9c863a069643b9ae91db896b96ebb8e8fdbcc959e8afb08bb"
