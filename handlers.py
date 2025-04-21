@@ -230,21 +230,6 @@ async def process_private_message(update: Update, context: CallbackContext) -> N
     logfire.info(f"Message: {response_text} Usage: {response.usage()}")
 
 
-def _get_user_conversations_table(db) -> None:
-    user_conversations = db.table("user_conversations", pk=("user_id",))
-    if not user_conversations.exists():
-        user_conversations.create(
-            {
-                "user_id": int,
-                "conversation_id": str,
-                "last_used": str,
-            },
-            if_not_exists=True,
-        )
-
-    return user_conversations
-
-
 def _get_chat_conversations_table(db) -> None:
     chat_conversations = db.table("chat_conversations", pk=("chat_id",))
     if not chat_conversations.exists():
@@ -384,7 +369,7 @@ async def process_message(update: Update, context: CallbackContext) -> None:
     logfire.info(f"Prompt: {message_text}")
 
     # Find links in the message text
-    additional_context = ""
+    fragments = []
     url_pattern = r"@(https?://[^\s]+|[^\s]+\.[^\s]+/[^\s]*)"
     urls = re.findall(url_pattern, message_text) if message_text else []
 
@@ -398,7 +383,7 @@ async def process_message(update: Update, context: CallbackContext) -> None:
             {scrape_result["markdown"]}
             </source_context>
             """)
-            additional_context += source_context
+            fragments.append(source_context)
 
     # Check if this is a thinking request
     thinking_requested = "@think" in message_text if message_text else False
@@ -436,7 +421,7 @@ async def process_message(update: Update, context: CallbackContext) -> None:
         thinking_message = await update.message.reply_text("...")
 
         # Add the thinking output to the context for the final response
-        additional_context += f"\n\n<thinking>\n{thinking_output}\n</thinking>\n\n"
+        fragments.append(f"\n\n<thinking>\n{thinking_output}\n</thinking>\n\n")
 
         # Use the clean message (without @think) for the final prompt
         message_text = clean_message
@@ -463,7 +448,7 @@ async def process_message(update: Update, context: CallbackContext) -> None:
         {search_results}
         </web_search_results>
         """)
-        additional_context += "\n\n" + web_context
+        fragments.append("\n\n" + web_context)
 
         # Remove the @web part from the message
         message_text = message_text.replace("@web", "").strip()
@@ -538,12 +523,9 @@ async def process_message(update: Update, context: CallbackContext) -> None:
         )
         attachments.append(llm.Attachment(content=voice_content))
 
-    message_text = (
-        message_text + "\n\n" + additional_context if message_text else message_text
-    )
-
     response = conversation.prompt(
         message_text,
+        fragments=fragments,
         attachments=attachments,
     )
 
