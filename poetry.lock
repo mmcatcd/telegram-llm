@@ -700,17 +700,17 @@ test = ["black (>=25.1.0)", "cogapp", "mypy (>=1.10.0)", "numpy", "pytest", "pyt
 
 [[package]]
 name = "llm-anthropic"
-version = "0.15.1"
+version = "0.16"
 description = "LLM access to models by Anthropic, including the Claude series"
 optional = false
 python-versions = "*"
 files = [
-    {file = "llm_anthropic-0.15.1-py3-none-any.whl", hash = "sha256:1f66507df807fb27e53e73f448b4a22e2285ef0b198e9c4889c3a695dd7f8d34"},
-    {file = "llm_anthropic-0.15.1.tar.gz", hash = "sha256:0bcc4db38a12e75631027d6226493c8f8b09e5d3b4a553b02223f89affcc9d09"},
+    {file = "llm_anthropic-0.16-py3-none-any.whl", hash = "sha256:d61853867c4d382087477d72238f1e851b25bf47afe8838df79a796c3f97c6a8"},
+    {file = "llm_anthropic-0.16.tar.gz", hash = "sha256:a85893d07e3f36889923963e1af772f11ab122ea92f9cd76032c4a9ee2876f3e"},
 ]
 
 [package.dependencies]
-anthropic = ">=0.48.0"
+anthropic = ">=0.47.2"
 llm = ">=0.23"
 
 [package.extras]
@@ -1828,4 +1828,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "c2e5cd35c158e1d9c863a069643b9ae91db896b96ebb8e8fdbcc959e8afb08bb"
+content-hash = "007ab428a325ed5c345de4c79fdb2d9b25e29f81989f181ce3d3a492c10e90ac"
