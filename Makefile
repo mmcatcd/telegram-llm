@@ -8,6 +8,11 @@ run:
 	@echo "Running container..."
 	docker compose up
 
+.PHONY: build-and-run
+build-and-run:
+	@echo "Building and running container..."
+	docker compose up --build --force-recreate -d
+
 .PHONY: shell
 shell:
 	@echo "Opening Python shell in Poetry environment..."
