@@ -209,23 +209,39 @@ async def process_private_message(update: Update, context: CallbackContext) -> N
             parse_mode="MARKDOWN",
         )
 
+    # Send a "Thinking..." message first
+    thinking_message = await update.message.reply_text("...")
+
     message_text = " ".join(context.args)
     model = llm.get_model(context.user_data.get("model_id", default_model_id))
     response = model.prompt(message_text)
 
     try:
         response_text = response.text()
+        # First try to edit with markdown
+        try:
+            await thinking_message.edit_text(response_text, parse_mode="Markdown")
+            return
+        except BadRequest:
+            pass
+
+        # Then try without markdown
+        try:
+            await thinking_message.edit_text(response_text)
+            return
+        except BadRequest:
+            pass
+
+        # Finally, delete thinking message and use send_long_message
+        await thinking_message.delete()
+        await send_long_message(update, context, response_text)
+
     except Exception as e:
         await update.message.reply_text(
             f"Something went wrong when trying to call the LLM: {e}"
         )
         logfire.error(e)
         return
-
-    try:
-        await send_long_message(update, context, response_text, parse_mode="Markdown")
-    except BadRequest:
-        await send_long_message(update, context, response_text, parse_mode=None)
 
     logfire.info(f"Message: {response_text} Usage: {response.usage()}")
 
@@ -531,8 +547,26 @@ async def process_message(update: Update, context: CallbackContext) -> None:
 
     try:
         response_text = response.text()
+        # First try to edit with markdown
+        try:
+            await thinking_message.edit_text(response_text, parse_mode="Markdown")
+            return
+        except BadRequest:
+            pass
+
+        # Then try without markdown
+        try:
+            await thinking_message.edit_text(response_text)
+            return
+        except BadRequest:
+            pass
+
+        # Finally, delete thinking message and use send_long_message
+        await thinking_message.delete()
+        await send_long_message(update, context, response_text)
+
     except Exception as e:
-        await thinking_message.edit_text(
+        await update.message.reply_text(
             f"Something went wrong when trying to call the LLM: {e}"
         )
         logfire.error(e)
@@ -540,21 +574,6 @@ async def process_message(update: Update, context: CallbackContext) -> None:
 
     # Persisting the response to the SQLite DB to keep the conversation
     response.log_to_db(db)
-
-    try:
-        # Edit the "Thinking..." message with the actual response
-        await thinking_message.edit_text(response_text, parse_mode="Markdown")
-    except BadRequest:
-        # If Markdown parsing fails, try without it
-        try:
-            await thinking_message.edit_text(response_text)
-        except BadRequest as e:
-            # If the message is too long for a single edit, use send_long_message
-            logfire.warning(
-                f"Failed to edit message: {e}. Falling back to send_long_message"
-            )
-            await thinking_message.delete()
-            await send_long_message(update, context, response_text)
 
     logfire.info(f"Message: {response_text} Usage: {response.usage()}")
 
