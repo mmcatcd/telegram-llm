@@ -49,6 +49,19 @@ firecrawl_app = FirecrawlApp(api_key=firecrawl_api_key)
 MESSAGE_HISTORY_LIMIT = 15
 
 
+def simple_eval(expression: str) -> str:
+    """
+    Evaluate a simple expression using the simpleeval library.
+    """
+    try:
+        result = eval(expression)
+        print("Simple eval result: ", result)
+        return str(result)
+    except Exception as e:
+        print("Simple eval error: ", e)
+        return f"Error: {str(e)}"
+
+
 async def user_id(update: Update, context: CallbackContext) -> None:
     await update.message.reply_text(f"Your user id is: {update.effective_user.id}")
 
@@ -367,9 +380,6 @@ async def process_message(update: Update, context: CallbackContext) -> None:
 
     if not conversation_id:
         conversation = model.conversation()
-        _set_chat_conversation_id(
-            chat_conversations_table, conversation.id, update.effective_chat.id
-        )
     else:
         conversation = load_conversation(conversation_id)
         conversation.model = model
@@ -539,10 +549,13 @@ async def process_message(update: Update, context: CallbackContext) -> None:
         )
         attachments.append(llm.Attachment(content=voice_content))
 
-    response = conversation.prompt(
+    response = conversation.chain(
         message_text,
         fragments=fragments,
         attachments=attachments,
+        after_call=print,
+        chain_limit=10,
+        tools=[simple_eval],
     )
 
     try:
@@ -550,14 +563,12 @@ async def process_message(update: Update, context: CallbackContext) -> None:
         # First try to edit with markdown
         try:
             await thinking_message.edit_text(response_text, parse_mode="Markdown")
-            return
         except BadRequest:
             pass
 
         # Then try without markdown
         try:
             await thinking_message.edit_text(response_text)
-            return
         except BadRequest:
             pass
 
@@ -575,7 +586,17 @@ async def process_message(update: Update, context: CallbackContext) -> None:
     # Persisting the response to the SQLite DB to keep the conversation
     response.log_to_db(db)
 
-    logfire.info(f"Message: {response_text} Usage: {response.usage()}")
+    # Only persist the conversation after logging to the DB
+    if not conversation_id:
+        _set_chat_conversation_id(
+            chat_conversations_table, conversation.id, update.effective_chat.id
+        )
+
+    if hasattr(response, "usage"):
+        logfire.info(f"Message: {response_text} Usage: {response.usage()}")
+    else:
+        for r in response.responses():
+            logfire.info(f"Message: {r.text()} Usage: {r.usage()}")
 
 
 async def error_handler(update: Update, context: CallbackContext) -> None:

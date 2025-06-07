@@ -212,13 +212,13 @@ files = [
 
 [[package]]
 name = "condense-json"
-version = "0.1.2"
+version = "0.1.3"
 description = "Python function for condensing JSON using replacement strings"
 optional = false
-python-versions = ">=3.8"
+python-versions = ">=3.9"
 files = [
-    {file = "condense_json-0.1.2-py3-none-any.whl", hash = "sha256:bedc4f9de5c626483e57577adfebb9ef655a3b8ad15ab85401e2fdcc27aa37bb"},
-    {file = "condense_json-0.1.2.tar.gz", hash = "sha256:a161e1984122ad35801cc14ecfe2b38d9d638c8c089e04cb545d26300fdc485e"},
+    {file = "condense_json-0.1.3-py3-none-any.whl", hash = "sha256:e0a3d42db4f44a89e74af8737d8e517e97420be0f7e5437087f4decfd38c3366"},
+    {file = "condense_json-0.1.3.tar.gz", hash = "sha256:25fe8d434fdafd849e8d98f21a3e18f96ae2d6dbc2c17565f29e4843d039d2bc"},
 ]
 
 [package.extras]
@@ -670,19 +670,19 @@ files = [
 
 [[package]]
 name = "llm"
-version = "0.24.2"
+version = "0.26"
 description = "CLI utility and Python library for interacting with Large Language Models from organizations like OpenAI, Anthropic and Gemini plus local models installed on your own machine."
 optional = false
 python-versions = ">=3.9"
 files = [
-    {file = "llm-0.24.2-py3-none-any.whl", hash = "sha256:057f4035560aaf5453dea8758233d83c68be80b8b4bb1bf82babe530c55b52b9"},
-    {file = "llm-0.24.2.tar.gz", hash = "sha256:e14f2722183884ce09692201b54cdd961942492f0d93ca749a62d02b3b8bf43a"},
+    {file = "llm-0.26-py3-none-any.whl", hash = "sha256:93dc331facbfb909f946df8812fb1d627ec9ce764aab2ebd29f9011ed647339c"},
+    {file = "llm-0.26.tar.gz", hash = "sha256:c2e9ddbc582da10c61112c0f983383fa0dc7bee3ca7d6f2ade1a2d003771eb1b"},
 ]
 
 [package.dependencies]
 click = "*"
 click-default-group = ">=1.2.3"
-condense-json = ">=0.1.2"
+condense-json = ">=0.1.3"
 openai = ">=1.55.3"
 pip = "*"
 pluggy = "*"
@@ -696,22 +696,22 @@ sqlite-migrate = ">=0.1a2"
 sqlite-utils = ">=3.37"
 
 [package.extras]
-test = ["black (>=25.1.0)", "cogapp", "mypy (>=1.10.0)", "numpy", "pytest", "pytest-asyncio", "pytest-httpx (>=0.33.0)", "ruff", "types-PyYAML", "types-click", "types-setuptools"]
+test = ["black (>=25.1.0)", "build", "click (<8.2.0)", "cogapp", "llm-echo (==0.3a3)", "mypy (>=1.10.0)", "numpy", "pytest", "pytest-asyncio", "pytest-httpx (>=0.33.0)", "pytest-recording", "ruff", "syrupy", "types-PyYAML", "types-click", "types-setuptools"]
 
 [[package]]
 name = "llm-anthropic"
-version = "0.16"
+version = "0.17"
 description = "LLM access to models by Anthropic, including the Claude series"
 optional = false
 python-versions = "*"
 files = [
-    {file = "llm_anthropic-0.16-py3-none-any.whl", hash = "sha256:d61853867c4d382087477d72238f1e851b25bf47afe8838df79a796c3f97c6a8"},
-    {file = "llm_anthropic-0.16.tar.gz", hash = "sha256:a85893d07e3f36889923963e1af772f11ab122ea92f9cd76032c4a9ee2876f3e"},
+    {file = "llm_anthropic-0.17-py3-none-any.whl", hash = "sha256:00cc7df6219007d772991070be6ec38944c6ce94c26952821d6c5f4683f34dc8"},
+    {file = "llm_anthropic-0.17.tar.gz", hash = "sha256:2f5e1ab5b7eb9a84b8d07473a8697088b659fd4f1941d96863cf18cf8cfb9eb0"},
 ]
 
 [package.dependencies]
-anthropic = ">=0.47.2"
-llm = ">=0.23"
+anthropic = ">=0.48.0"
+llm = ">=0.26"
 
 [package.extras]
 test = ["cogapp", "pytest", "pytest-asyncio", "pytest-recording"]
@@ -737,13 +737,13 @@ test = ["nest-asyncio", "pytest", "pytest-asyncio", "pytest-recording"]
 
 [[package]]
 name = "llm-openai-plugin"
-version = "0.3"
+version = "0.4"
 description = "LLM plugin for OpenAI"
 optional = false
 python-versions = ">=3.9"
 files = [
-    {file = "llm_openai_plugin-0.3-py3-none-any.whl", hash = "sha256:5aed314cc890b70e24c00479e1dc26978e0c987e17d819f835d78ec129e8c4fe"},
-    {file = "llm_openai_plugin-0.3.tar.gz", hash = "sha256:b67e032ac31516e7aad3ed23d0540ee19ec5798e4da85fd48b7965ef6ba1db88"},
+    {file = "llm_openai_plugin-0.4-py3-none-any.whl", hash = "sha256:25cacad225d5f506a4b620ec2961601931529ce22c590d56078477f0b6edf8b7"},
+    {file = "llm_openai_plugin-0.4.tar.gz", hash = "sha256:96afa8c4708dccb30059b5eabfe080c3d0da3b30cfa14ce7745accebb4a78ec0"},
 ]
 
 [package.dependencies]
@@ -1828,4 +1828,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "007ab428a325ed5c345de4c79fdb2d9b25e29f81989f181ce3d3a492c10e90ac"
+content-hash = "622cc56a5b06d703ef6c4042ab116479010c467cd93f1755d6665b591457025e"
