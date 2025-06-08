@@ -18,6 +18,11 @@ shell:
 	@echo "Opening Python shell in Poetry environment..."
 	docker compose run --rm bot poetry run python
 
+.PHONY: datasette
+datasette:
+	@echo "Opening bash shell in Poetry environment..."
+	docker compose run --service-ports bot datasette -p 8001 -h 0.0.0.0 /root/.config/io.datasette.llm/logs.db
+
 .PHONY: test
 test:
 	@echo "Running tests in Docker container..."

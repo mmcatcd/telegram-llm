@@ -7,6 +7,9 @@ services:
     volumes:
       - .:/app:rw  # Mount the entire codebase as a volume
       - llm_data:/root/.config/io.datasette.llm  # Named volume for the LLM database
+      - .:/mnt
+    ports:
+      - "8001:8001"
 
 volumes:
   llm_data:
