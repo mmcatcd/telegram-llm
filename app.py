@@ -8,6 +8,7 @@ from config import logfire_api_key
 from handlers import (
     attachment_types,
     chat_id,
+    conversation_id,
     error_handler,
     help,
     list_models,
@@ -31,6 +32,7 @@ def main():
 
     app.add_handler(CommandHandler("_user_id", user_id))
     app.add_handler(CommandHandler("_chat_id", chat_id))
+    app.add_handler(CommandHandler("_conversation_id", conversation_id))
     app.add_handler(CommandHandler("private", process_private_message))
     app.add_handler(CommandHandler("system_prompt", system_prompt))
     app.add_handler(CommandHandler("set_system_prompt", set_system_prompt))
