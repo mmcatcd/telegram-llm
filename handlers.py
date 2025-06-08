@@ -48,6 +48,7 @@ model_cutoffs = {
 firecrawl_app = FirecrawlApp(api_key=firecrawl_api_key)
 
 MESSAGE_HISTORY_LIMIT = 15
+AGENTIC_LOOP_LIMIT = 10
 
 
 async def user_id(update: Update, context: CallbackContext) -> None:
@@ -573,7 +574,7 @@ async def process_message(update: Update, context: CallbackContext) -> None:
         fragments=fragments,
         attachments=attachments,
         after_call=after_call,
-        chain_limit=10,
+        chain_limit=AGENTIC_LOOP_LIMIT,
     )
 
     try:
