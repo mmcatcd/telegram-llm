@@ -10,6 +10,7 @@ import sqlite_utils
 from firecrawl import FirecrawlApp
 from llm.cli import load_conversation, logs_db_path
 from llm.migrations import migrate
+from llm.models import Tool, ToolCall, ToolResult
 from telegram import Update
 from telegram.error import BadRequest
 from telegram.ext import CallbackContext
@@ -47,6 +48,7 @@ model_cutoffs = {
 firecrawl_app = FirecrawlApp(api_key=firecrawl_api_key)
 
 MESSAGE_HISTORY_LIMIT = 15
+AGENTIC_LOOP_LIMIT = 10
 
 
 async def user_id(update: Update, context: CallbackContext) -> None:
@@ -56,6 +58,19 @@ async def user_id(update: Update, context: CallbackContext) -> None:
 @restricted
 async def chat_id(update: Update, context: CallbackContext) -> None:
     await update.message.reply_text(f"Your chat id is: {update.effective_chat.id}")
+
+
+@restricted
+async def conversation_id(update: Update, context: CallbackContext) -> None:
+    db = sqlite_utils.Database(logs_db_path())
+    migrate(db)  # Migrate the DB before using it, as `log_to_db` doesn't do a migration
+
+    chat_conversations_table = _get_chat_conversations_table(db)
+
+    conversation_id = _get_chat_conversation_id(
+        chat_conversations_table, update.effective_chat.id
+    )
+    await update.message.reply_text(f"Your conversation id is: {conversation_id}")
 
 
 @restricted
@@ -367,9 +382,6 @@ async def process_message(update: Update, context: CallbackContext) -> None:
 
     if not conversation_id:
         conversation = model.conversation()
-        _set_chat_conversation_id(
-            chat_conversations_table, conversation.id, update.effective_chat.id
-        )
     else:
         conversation = load_conversation(conversation_id)
         conversation.model = model
@@ -539,31 +551,47 @@ async def process_message(update: Update, context: CallbackContext) -> None:
         )
         attachments.append(llm.Attachment(content=voice_content))
 
-    response = conversation.prompt(
+    pretty_print_tool_calls = []
+
+    # A hacky way of collecting info about tool calls for now. Ideally, this function
+    # would also print it out to the telegram chat. This doesn't work for now because
+    # we don't make LLM calls using asyncio.
+    def after_call(tool: Tool, tool_call: ToolCall, tool_result: ToolResult) -> None:
+        nonlocal pretty_print_tool_calls
+        pretty_print_tool_calls.append(
+            cleandoc(f"""
+        <blockquote expandable>
+        <b>🪛Tool Call</b>
+        <i>Name:</i> {tool.name}
+        <i>Args</i>: <code>{tool_call.arguments}</code>
+        <i>Result:</i> <code>{tool_result.output}</code>
+        </blockquote>""")
+        )
+        logfire.info(f"Tool call: {tool}, {tool_call}, {tool_result}")
+
+    response = conversation.chain(
         message_text,
         fragments=fragments,
         attachments=attachments,
+        after_call=after_call,
+        chain_limit=AGENTIC_LOOP_LIMIT,
     )
 
     try:
         response_text = response.text()
-        # First try to edit with markdown
-        try:
-            await thinking_message.edit_text(response_text, parse_mode="Markdown")
-            return
-        except BadRequest:
-            pass
-
-        # Then try without markdown
-        try:
-            await thinking_message.edit_text(response_text)
-            return
-        except BadRequest:
-            pass
-
-        # Finally, delete thinking message and use send_long_message
         await thinking_message.delete()
-        await send_long_message(update, context, response_text)
+        if pretty_print_tool_calls:
+            for tool_call in pretty_print_tool_calls:
+                await update.message.reply_text(tool_call, parse_mode="HTML")
+        # First try to reply with markdown
+        try:
+            await update.message.reply_text(response_text, parse_mode="Markdown")
+        except BadRequest:
+            # Then try without markdown
+            try:
+                await update.message.reply_text(response_text)
+            except BadRequest:
+                await send_long_message(update, context, response_text)
 
     except Exception as e:
         await update.message.reply_text(
@@ -575,7 +603,17 @@ async def process_message(update: Update, context: CallbackContext) -> None:
     # Persisting the response to the SQLite DB to keep the conversation
     response.log_to_db(db)
 
-    logfire.info(f"Message: {response_text} Usage: {response.usage()}")
+    # Only persist the conversation after logging to the DB
+    if not conversation_id:
+        _set_chat_conversation_id(
+            chat_conversations_table, conversation.id, update.effective_chat.id
+        )
+
+    if hasattr(response, "usage"):
+        logfire.info(f"Message: {response_text} Usage: {response.usage()}")
+    else:
+        for r in response.responses():
+            logfire.info(f"Message: {r.text()} Usage: {r.usage()}")
 
 
 async def error_handler(update: Update, context: CallbackContext) -> None:
