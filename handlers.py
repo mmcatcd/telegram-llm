@@ -48,7 +48,7 @@ model_cutoffs = {
 firecrawl_app = FirecrawlApp(api_key=firecrawl_api_key)
 
 MESSAGE_HISTORY_LIMIT = 15
-AGENTIC_LOOP_LIMIT = 10
+CHAIN_LIMIT = 10
 
 
 async def user_id(update: Update, context: CallbackContext) -> None:
@@ -184,7 +184,7 @@ async def list_models(update: Update, context: CallbackContext) -> None:
 @restricted
 async def attachment_types(update: Update, context: CallbackContext) -> None:
     model_id = context.user_data.get("model_id", default_model_id)
-    model = llm.get_model(model_id)
+    model = llm.get_async_model(model_id)
     attachment_types = "\n".join("- " + type for type in model.attachment_types)
     await update.message.reply_text(
         f"Supported attachment types are:\n{attachment_types}",
@@ -228,11 +228,11 @@ async def process_private_message(update: Update, context: CallbackContext) -> N
     thinking_message = await update.message.reply_text("...")
 
     message_text = " ".join(context.args)
-    model = llm.get_model(context.user_data.get("model_id", default_model_id))
+    model = llm.get_async_model(context.user_data.get("model_id", default_model_id))
     response = model.prompt(message_text)
 
     try:
-        response_text = response.text()
+        response_text = await response.text()
         # First try to edit with markdown
         try:
             await thinking_message.edit_text(response_text, parse_mode="Markdown")
@@ -378,7 +378,7 @@ async def process_message(update: Update, context: CallbackContext) -> None:
         chat_conversations_table, update.effective_chat.id
     )
     model_id = context.user_data.get("model_id", default_model_id)
-    model = llm.get_model(model_id)
+    model = llm.get_async_model(model_id)
 
     if not conversation_id:
         conversation = model.conversation()
@@ -434,7 +434,7 @@ async def process_message(update: Update, context: CallbackContext) -> None:
 
         # Make the initial "thinking" call to the model
         thinking_response = conversation.prompt(thinking_prompt)
-        thinking_output = thinking_response.text()
+        thinking_output = await thinking_response.text()
 
         # Log the thinking output
         logfire.info(f"Thinking output: {thinking_output}...")
@@ -461,7 +461,8 @@ async def process_message(update: Update, context: CallbackContext) -> None:
     if web_searches:
         search_prompt = f"Based on this message: '{message_text}', create a specific web search query that will help answer the user's question. Make it concise but specific."
         search_response = model.prompt(search_prompt)
-        search_query = search_response.text().strip()
+        search_query = await search_response.text()
+        search_query = search_query.strip()
 
         logfire.info(f"Web search query: {search_query}")
 
@@ -574,11 +575,11 @@ async def process_message(update: Update, context: CallbackContext) -> None:
         fragments=fragments,
         attachments=attachments,
         after_call=after_call,
-        chain_limit=AGENTIC_LOOP_LIMIT,
+        chain_limit=CHAIN_LIMIT,
     )
 
     try:
-        response_text = response.text()
+        response_text = await response.text()
         await thinking_message.delete()
         if pretty_print_tool_calls:
             for tool_call in pretty_print_tool_calls:
@@ -612,8 +613,10 @@ async def process_message(update: Update, context: CallbackContext) -> None:
     if hasattr(response, "usage"):
         logfire.info(f"Message: {response_text} Usage: {response.usage()}")
     else:
-        for r in response.responses():
-            logfire.info(f"Message: {r.text()} Usage: {r.usage()}")
+        async for r in response.responses():
+            t = await r.text()
+            usage = await r.usage()
+            logfire.info(f"Message: {t} Usage: {usage}")
 
 
 async def error_handler(update: Update, context: CallbackContext) -> None:
