@@ -229,7 +229,8 @@ async def process_private_message(update: Update, context: CallbackContext) -> N
 
     message_text = " ".join(context.args)
     model = llm.get_model(context.user_data.get("model_id", default_model_id))
-    response = model.prompt(message_text)
+    system_prompt = context.user_data.get("system_prompt", "")
+    response = model.prompt(message_text, system=system_prompt)
 
     try:
         response_text = response.text()
@@ -433,7 +434,8 @@ async def process_message(update: Update, context: CallbackContext) -> None:
         """)
 
         # Make the initial "thinking" call to the model
-        thinking_response = conversation.prompt(thinking_prompt)
+        system_prompt = context.user_data.get("system_prompt", "")
+        thinking_response = conversation.prompt(thinking_prompt, system=system_prompt)
         thinking_output = thinking_response.text()
 
         # Log the thinking output
