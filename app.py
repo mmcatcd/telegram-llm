@@ -4,7 +4,7 @@ import logfire
 from dotenv import load_dotenv
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters
 
-from config import logfire_api_key
+from config import environment, logfire_api_key
 from handlers import (
     attachment_types,
     chat_id,
@@ -21,7 +21,7 @@ from handlers import (
     user_id,
 )
 
-logfire.configure(token=logfire_api_key)
+logfire.configure(token=logfire_api_key, environment=environment)
 load_dotenv()
 
 BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
