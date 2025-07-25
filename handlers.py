@@ -47,7 +47,8 @@ model_cutoffs = {
 
 firecrawl_app = FirecrawlApp(api_key=firecrawl_api_key)
 
-MESSAGE_HISTORY_LIMIT = 15
+MAX_TOKEN_LIMIT = 10_000
+WORD_TOKEN_MULTIPLE_ESTIMATE = 1.5
 AGENTIC_LOOP_LIMIT = 10
 
 
@@ -299,6 +300,14 @@ def _set_chat_conversation_id(
     )
 
 
+def _estimate_tokens_from_text(text: str) -> int:
+    # Estimate token count from text using word count * 1.5 heuristic
+    if not text:
+        return 0
+    word_count = len(text.split())
+    return int(word_count * WORD_TOKEN_MULTIPLE_ESTIMATE)
+
+
 def _get_responses_compatible_with_model(
     conversation: llm.Conversation, model: llm.Model
 ) -> list[llm.Response]:
@@ -308,7 +317,10 @@ def _get_responses_compatible_with_model(
     the underlying model calls generated are not compatible with the input messages that have the attachments.
     """
     filtered_responses = []
-    for response in conversation.responses[-MESSAGE_HISTORY_LIMIT:]:
+    total_estimated_tokens = 0
+
+    for response in reversed(conversation.responses):
+        print("Response:", response.text_or_raise())
         # For responses with attachments, we need to handle them carefully
         if hasattr(response, "attachments") and response.attachments:
             # Check if any attachments are incompatible
@@ -320,9 +332,22 @@ def _get_responses_compatible_with_model(
             if has_incompatible_attachments:
                 continue
 
+        # Estimate tokens based on text content instead of relying on cumulative DB counts
+        input_tokens = _estimate_tokens_from_text(response.prompt.prompt)
+        output_tokens = _estimate_tokens_from_text(response.text_or_raise())
+        response_estimated_tokens = input_tokens + output_tokens
+
+        if total_estimated_tokens + response_estimated_tokens > MAX_TOKEN_LIMIT:
+            break
+
+        total_estimated_tokens += response_estimated_tokens
         filtered_responses.append(response)
 
-    return filtered_responses
+    logfire.info(f"Estimated context tokens: {total_estimated_tokens}")
+    logfire.info(f"Number of responses: {len(filtered_responses)}")
+
+    # Return in chronological order (oldest to newest)
+    return list(reversed(filtered_responses))
 
 
 def _perform_web_search(query: str) -> str:
@@ -389,7 +414,6 @@ async def process_message(update: Update, context: CallbackContext) -> None:
         conversation.responses = _get_responses_compatible_with_model(
             conversation, model
         )
-        logfire.info(f"Number of responses: {len(conversation.responses)}")
 
     attachments = []
     message_text: str | None = (
