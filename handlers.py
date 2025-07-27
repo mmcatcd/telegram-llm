@@ -213,6 +213,8 @@ async def help(update: Update, context: CallbackContext) -> None:
         - Example: `@web latest quantum computing breakthroughs`
     `@https://example.com` or `@example.com/path` - Scrape a webpage and include its content in the context
         - Example: `Explain this documentation page @https://docs.python.org/3/tutorial/classes.html`
+    `@last[x]` - Limit conversation to the last x messages (respects token limit)
+        - Example: `Can you tell me why Paris became the capital of France @last3`
     """)
     await send_long_message(update, context, help_text, parse_mode="Markdown")
 
@@ -309,7 +311,7 @@ def _estimate_tokens_from_text(text: str) -> int:
 
 
 def _get_responses_compatible_with_model(
-    conversation: llm.Conversation, model: llm.Model
+    conversation: llm.Conversation, model: llm.Model, max_messages: int = None
 ) -> list[llm.Response]:
     """
     We need to remove any responses from the conversation history that have incompatible attachments.
@@ -319,8 +321,14 @@ def _get_responses_compatible_with_model(
     filtered_responses = []
     total_estimated_tokens = 0
 
-    for response in reversed(conversation.responses):
-        print("Response:", response.text_or_raise())
+    # If max_messages is specified, limit the responses to that number
+    responses_to_process = conversation.responses
+    if max_messages is not None:
+        responses_to_process = (
+            conversation.responses[-max_messages:] if max_messages > 0 else []
+        )
+
+    for response in reversed(responses_to_process):
         # For responses with attachments, we need to handle them carefully
         if hasattr(response, "attachments") and response.attachments:
             # Check if any attachments are incompatible
@@ -406,19 +414,32 @@ async def process_message(update: Update, context: CallbackContext) -> None:
     model_id = context.user_data.get("model_id", default_model_id)
     model = llm.get_model(model_id)
 
+    message_text: str | None = (
+        update.message.text if update.message.text else update.message.caption
+    )
+
+    # Check for @last[x] commands to limit conversation history
+    max_messages = None
+    last_pattern = r"@last(\d+)"
+    last_matches = re.findall(last_pattern, message_text) if message_text else []
+
+    if last_matches:
+        max_messages = int(last_matches[0])
+        logfire.info(f"Getting the {max_messages} last messages")
+
     if not conversation_id:
         conversation = model.conversation()
     else:
         conversation = load_conversation(conversation_id)
         conversation.model = model
         conversation.responses = _get_responses_compatible_with_model(
-            conversation, model
+            conversation, model, max_messages
         )
 
     attachments = []
-    message_text: str | None = (
-        update.message.text if update.message.text else update.message.caption
-    )
+    # Remove the @last[x] part from the message text for processing
+    if last_matches:
+        message_text = re.sub(last_pattern, "", message_text).strip()
     logfire.info(f"Prompt: {message_text}")
 
     # Find links in the message text
