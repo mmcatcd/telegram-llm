@@ -118,7 +118,7 @@ async def set_model(update: Update, context: CallbackContext) -> None:
 
 @restricted
 async def system_prompt(update: Update, context: CallbackContext) -> None:
-    system_prompt = context.user_data.get("system_prompt", "")
+    system_prompt = context.chat_data.get("system_prompt", "")
 
     if system_prompt:
         return await send_long_message(
@@ -136,7 +136,7 @@ async def system_prompt(update: Update, context: CallbackContext) -> None:
 @restricted
 async def set_system_prompt(update: Update, context: CallbackContext) -> None:
     if not context.args or len(context.args) == 0:
-        context.user_data["system_prompt"] = ""
+        context.chat_data["system_prompt"] = ""
         return await send_long_message(
             update,
             context,
@@ -156,7 +156,7 @@ async def set_system_prompt(update: Update, context: CallbackContext) -> None:
                 with open(prompt_file_path, "r", encoding="utf-8") as f:
                     system_prompt = f.read().strip()
 
-                context.user_data["system_prompt"] = system_prompt
+                context.chat_data["system_prompt"] = system_prompt
 
                 await send_long_message(
                     update,
@@ -181,7 +181,7 @@ async def set_system_prompt(update: Update, context: CallbackContext) -> None:
     else:
         # Fall back to current behavior - join all arguments as custom system prompt
         system_prompt = " ".join(context.args)
-        context.user_data["system_prompt"] = system_prompt
+        context.chat_data["system_prompt"] = system_prompt
 
         await send_long_message(
             update,
@@ -268,7 +268,7 @@ async def process_private_message(update: Update, context: CallbackContext) -> N
 
     message_text = " ".join(context.args)
     model = llm.get_model(context.user_data.get("model_id", default_model_id))
-    system_prompt = context.user_data.get("system_prompt", "")
+    system_prompt = context.chat_data.get("system_prompt", "")
     response = model.prompt(message_text, system=system_prompt)
 
     try:
@@ -515,7 +515,7 @@ async def process_message(update: Update, context: CallbackContext) -> None:
         """)
 
         # Make the initial "thinking" call to the model
-        system_prompt = context.user_data.get("system_prompt", "")
+        system_prompt = context.chat_data.get("system_prompt", "")
         thinking_response = conversation.prompt(thinking_prompt, system=system_prompt)
         thinking_output = thinking_response.text()
 
@@ -652,12 +652,14 @@ async def process_message(update: Update, context: CallbackContext) -> None:
         )
         logfire.info(f"Tool call: {tool}, {tool_call}, {tool_result}")
 
+    system_prompt = context.chat_data.get("system_prompt", "")
     response = conversation.chain(
         message_text,
         fragments=fragments,
         attachments=attachments,
         after_call=after_call,
         chain_limit=AGENTIC_LOOP_LIMIT,
+        system=system_prompt,
     )
 
     try:
