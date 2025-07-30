@@ -161,7 +161,7 @@ async def set_system_prompt(update: Update, context: CallbackContext) -> None:
                 await send_long_message(
                     update,
                     context,
-                    f"System prompt has been set to pre-defined prompt: **{prompt_name}**\n\n> {system_prompt[:200]}{'...' if len(system_prompt) > 200 else ''}\n",
+                    f"System prompt has been set to pre-defined prompt: `{prompt_name}`\n",
                     parse_mode="Markdown",
                 )
             except Exception as e:
