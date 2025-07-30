@@ -144,15 +144,51 @@ async def set_system_prompt(update: Update, context: CallbackContext) -> None:
             parse_mode="Markdown",
         )
 
-    system_prompt = " ".join(context.args)
-    context.user_data["system_prompt"] = system_prompt
+    # Check if the first argument is a pre-defined prompt (starts with @)
+    first_arg = context.args[0]
+    if first_arg.startswith("@"):
+        prompt_name = first_arg[1:]  # Remove the @ prefix
+        system_prompts_dir = os.path.join(os.path.dirname(__file__), "system_prompts")
+        prompt_file_path = os.path.join(system_prompts_dir, f"{prompt_name}.md")
 
-    await send_long_message(
-        update,
-        context,
-        f"Your system prompt has been updated to:\n\n> {system_prompt}\n",
-        parse_mode="Markdown",
-    )
+        if os.path.exists(prompt_file_path):
+            try:
+                with open(prompt_file_path, "r", encoding="utf-8") as f:
+                    system_prompt = f.read().strip()
+
+                context.user_data["system_prompt"] = system_prompt
+
+                await send_long_message(
+                    update,
+                    context,
+                    f"System prompt has been set to pre-defined prompt: **{prompt_name}**\n\n> {system_prompt[:200]}{'...' if len(system_prompt) > 200 else ''}\n",
+                    parse_mode="Markdown",
+                )
+            except Exception as e:
+                await send_long_message(
+                    update,
+                    context,
+                    f"Error loading pre-defined prompt '{prompt_name}': {str(e)}",
+                    parse_mode="Markdown",
+                )
+        else:
+            await send_long_message(
+                update,
+                context,
+                f"Pre-defined prompt '{prompt_name}' not found. Available prompts are in the system_prompts/ directory.",
+                parse_mode="Markdown",
+            )
+    else:
+        # Fall back to current behavior - join all arguments as custom system prompt
+        system_prompt = " ".join(context.args)
+        context.user_data["system_prompt"] = system_prompt
+
+        await send_long_message(
+            update,
+            context,
+            f"Your system prompt has been updated to:\n\n> {system_prompt}\n",
+            parse_mode="Markdown",
+        )
 
 
 @restricted
@@ -202,7 +238,7 @@ async def help(update: Update, context: CallbackContext) -> None:
     `/model` - Get the current model being used
     `/set_model` - Set the model being used
     `/system_prompt` - Get the current system prompt being used
-    `/set_system_prompt` - Set the system prompt
+    `/set_system_prompt` - Set the system prompt (use @name for pre-defined prompts)
     `/attachment_types` - Get the attachment types supported by the current model
     `/help` - Show this help message
     
